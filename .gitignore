@@ -11,3 +11,4 @@ fuel/app/cache/*/*
 nbproject/
 .idea
 *.tmproj
+.svn

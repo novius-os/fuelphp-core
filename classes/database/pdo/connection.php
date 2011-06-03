@@ -93,11 +93,7 @@ class Database_PDO_Connection extends \Database_Connection {
 
 	public function set_charset($charset)
 	{
-		// Make sure the database is connected
-		$this->_connection or $this->connect();
-
-		// Execute a raw SET NAMES query
-		$this->_connection->exec('SET NAMES '.$this->quote($charset));
+		// NOOP: Not supported on PDO connections
 	}
 
 	public function query($type, $sql, $as_object)
