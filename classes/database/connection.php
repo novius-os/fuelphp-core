@@ -75,6 +75,16 @@ abstract class Database_Connection {
 	}
 
 	/**
+	 * @param   string   instance name
+	 * @param   array    configuration parameters
+	 * @return  Database
+	 */
+	public static function classname($db = null, $name = 'unspecified')
+	{
+		return str_replace('_Connection', '_'.$name, strrchr(get_class(static::instance($db)),'\\'));
+	}
+
+	/**
 	 * @var  string  the last query executed
 	 */
 	public $last_query;

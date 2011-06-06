@@ -44,7 +44,8 @@ class DB {
 	 */
 	public static function query($sql, $type = null)
 	{
-		return new \Database_Query($sql, $type);
+		$class = Database_Connection::classname(null, 'Query');
+		return new $class($sql, $type);
 	}
 	
 	/*
@@ -73,7 +74,8 @@ class DB {
 	 */
 	public static function select($columns = NULL)
 	{
-		return new \Database_Query_Builder_Select(func_get_args());
+		$class = Database_Connection::classname(null, 'Builder_Select');
+		return new $class(func_get_args());
 	}
 
 	/**
@@ -87,7 +89,8 @@ class DB {
 	 */
 	public static function select_array(array $columns = NULL)
 	{
-		return new \Database_Query_Builder_Select($columns);
+		$class = Database_Connection::classname(null, 'Builder_Select');
+		return new $class($columns);
 	}
 
 	/**
@@ -102,7 +105,8 @@ class DB {
 	 */
 	public static function insert($table = NULL, array $columns = NULL)
 	{
-		return new \Database_Query_Builder_Insert($table, $columns);
+		$class = Database_Connection::classname(null, 'Builder_Insert');
+		return new $class($table, $columns);
 	}
 
 	/**
@@ -116,7 +120,8 @@ class DB {
 	 */
 	public static function update($table = NULL)
 	{
-		return new \Database_Query_Builder_Update($table);
+		$class = Database_Connection::classname(null, 'Builder_Update');
+		return new $class($table);
 	}
 
 	/**
@@ -130,7 +135,8 @@ class DB {
 	 */
 	public static function delete($table = NULL)
 	{
-		return new \Database_Query_Builder_Delete($table);
+		$class = Database_Connection::classname(null, 'Builder_Delete');
+		return new $class($table);
 	}
 
 	/**
