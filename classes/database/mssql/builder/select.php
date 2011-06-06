@@ -15,120 +15,71 @@ namespace Fuel\Core;
 class Database_Mssql_Builder_Select extends \Database_Pdo_Builder_Select {
 
 	/**
-	 * Compile the SQL query and return it.
+	 * This MSSQL specific version translates LIMIT and OFFSET into MSSQL2005 tSQL
+	 *
+	 * Based on the Kohana driver of xrado, https://github.com/xrado
 	 *
 	 * @param   object  Database instance
 	 * @return  string
 	 */
-	public function compile(\Database_Connection$db)
+	public function compile(\Database_Connection $db)
 	{
-		// Callback to quote identifiers
-		$quote_ident = array($db, 'quote_identifier');
+		// get the query
+		$sql = parent::compile($db);
 
-		// Callback to quote tables
-		$quote_table = array($db, 'quote_table');
-
-		// Start a selection query
-		$query = 'SELECT ';
-
-		// deal with limit and offset first
-		if ($this->_limit !== null)
+		// fetch any offset generated
+		if (preg_match("/OFFSET ([0-9]+)/i", $sql, $matches))
 		{
-			// Add limiting
-			$query .= ' TOP '.$this->_limit.' ';
+			list($replace,$offset) = $matches;
+			$sql = str_replace($replace, '', $sql);
 		}
-		if ($this->_offset !== null and $this->_offset > 0)
+
+		// fetch any limit generated
+		if (preg_match("/LIMIT ([0-9]+)/i", $sql, $matches))
 		{
-			if (empty($this->_select))
+			list($replace,$limit) = $matches;
+			$sql = str_replace($replace, '', $sql);
+		}
+
+		if (isset($limit) or isset($offset))
+		{
+			if ( ! isset($offset))
 			{
-				// Select all columns
-				$query .= '*';
+				$sql = preg_replace("/^(SELECT|DELETE|UPDATE)\s/i", "$1 TOP " . $limit . ' ', $sql);
 			}
 			else
 			{
-				// Select all columns
-				$query .= implode(', ', array_unique(array_map($quote_ident, $this->_select)));
-			}
+				$orderby = stristr($sql, 'ORDER BY');
 
-			$this->_limit = $this->_offset;
-			$this->_offset = null;
-			$query .= ' FROM ( '. $this->compile($db) .' ) AS subquery';
-			if ( ! empty($this->_order_by))
-			{
-				foreach ($this->_order_by as $idx => $group)
+				if ( ! $orderby)
 				{
-					list ($column, $direction) = $group;
-
-					if ( ! empty($direction))
-					{
-						$this->_order_by[$idx][$column] = strtoupper($direction) == 'ASC' ? 'DESC' : 'ASC';
-					}
-					else
-					{
-						$this->_order_by[$idx][$column] = 'DESC';
-					}
+					$over = 'ORDER BY (SELECT 0)';
+				}
+				else
+				{
+					$over = trim(preg_replace('/[^,\s]*\.([^,\s]*)/i', 'fuel_inner_tbl.$1', $orderby));
 				}
 
-				// Add revserse sorting
-				$query .= ' '.$this->_compile_order_by($db, $this->_order_by);
+				// remove ORDER BY clause from $sql
+				$sql = preg_replace('/\s+ORDER BY(.*)/', '', $sql);
+
+				// add ORDER BY clause as an argument for ROW_NUMBER()
+				$sql = "SELECT ROW_NUMBER() OVER ($over) AS fuel_fake_rownr, * FROM ($sql) AS fuel_inner_tbl";
+
+				if (isset($limit))
+				{
+					$start = $offset + 1;
+					$end = $offset + $limit;
+					$sql = "WITH fuel_outer_tbl AS ($sql) SELECT * FROM fuel_outer_tbl WHERE fuel_fake_rownr BETWEEN $start AND $end";
+				}
+				else
+				{
+					$sql = "WITH fuel_outer_tbl AS ($sql) SELECT * FROM fuel_outer_tbl WHERE fuel_fake_rownr > $offset";
+				}
 			}
-			return $query;
 		}
 
-		if ($this->_distinct === TRUE)
-		{
-			// Select only unique results
-			$query .= 'DISTINCT ';
-		}
-
-		if (empty($this->_select))
-		{
-			// Select all columns
-			$query .= '*';
-		}
-		else
-		{
-			// Select all columns
-			$query .= implode(', ', array_unique(array_map($quote_ident, $this->_select)));
-		}
-
-		if ( ! empty($this->_from))
-		{
-			// Set tables to select from
-			$query .= ' FROM '.implode(', ', array_unique(array_map($quote_table, $this->_from)));
-		}
-
-		if ( ! empty($this->_join))
-		{
-			// Add tables to join
-			$query .= ' '.$this->_compile_join($db, $this->_join);
-		}
-
-		if ( ! empty($this->_where))
-		{
-			// Add selection conditions
-			$query .= ' WHERE '.$this->_compile_conditions($db, $this->_where);
-		}
-
-		if ( ! empty($this->_group_by))
-		{
-			// Add sorting
-			$query .= ' GROUP BY '.implode(', ', array_map($quote_ident, $this->_group_by));
-		}
-
-		if ( ! empty($this->_having))
-		{
-			// Add filtering conditions
-			$query .= ' HAVING '.$this->_compile_conditions($db, $this->_having);
-		}
-
-		if ( ! empty($this->_order_by))
-		{
-			// Add sorting
-			$query .= ' '.$this->_compile_order_by($db, $this->_order_by);
-		}
-
-		return $query;
+		return $sql;
 	}
 
 }
