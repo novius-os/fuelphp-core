@@ -247,12 +247,10 @@ class Input
 	 */
 	public static function all()
 	{
-		if (is_null(static::$input))
-		{
-			static::hydrate();
-		}
-
-		return static::$input;
+		return static::get_global('get', null, array()) +
+		       static::get_global('post', null, array()) +
+		       static::get_global('put', null, array()) +
+		       static::get_global('delete', null, array());
 	}
 
 	/**
@@ -264,7 +262,7 @@ class Input
 	 */
 	public static function get($index = null, $default = null)
 	{
-		return (is_null($index) and func_num_args() === 0) ? $_GET : \Arr::get($_GET, $index, $default);
+		return static::get_global('get', $index, $default);
 	}
 
 	/**
@@ -276,7 +274,7 @@ class Input
 	 */
 	public static function post($index = null, $default = null)
 	{
-		return (is_null($index) and func_num_args() === 0) ? $_POST : \Arr::get($_POST, $index, $default);
+		return static::get_global('post', $index, $default);
 	}
 
 	/**
@@ -288,12 +286,7 @@ class Input
 	 */
 	public static function put($index = null, $default = null)
 	{
-		if (is_null(static::$put_delete))
-		{
-			static::hydrate();
-		}
-
-		return (is_null($index) and func_num_args() === 0) ? static::$put_delete : \Arr::get(static::$put_delete, $index, $default);
+		return static::get_global('put', $index, $default);
 	}
 
 	/**
@@ -305,12 +298,7 @@ class Input
 	 */
 	public static function delete($index = null, $default = null)
 	{
-		if (is_null(static::$put_delete))
-		{
-			static::hydrate();
-		}
-
-		return (is_null($index) and func_num_args() === 0) ? static::$put_delete : \Arr::get(static::$put_delete, $index, $default);
+		return static::get_global('delete', $index, $default);
 	}
 
 	/**
@@ -322,7 +310,7 @@ class Input
 	 */
 	public static function file($index = null, $default = null)
 	{
-		return (is_null($index) and func_num_args() === 0) ? $_FILES : \Arr::get($_FILES, $index, $default);
+		return static::get_global('files', $index, $default);
 	}
 
 	/**
@@ -334,12 +322,7 @@ class Input
 	 */
 	public static function param($index = null, $default = null)
 	{
-		if (is_null(static::$input))
-		{
-			static::hydrate();
-		}
-
-		return \Arr::get(static::$input, $index, $default);
+		return \Arr::get(static::all(), $index, $default);
 	}
 
 	/**
@@ -364,7 +347,7 @@ class Input
 	 */
 	public static function cookie($index = null, $default = null)
 	{
-		return (is_null($index) and func_num_args() === 0) ? $_COOKIE : \Arr::get($_COOKIE, $index, $default);
+		return static::get_global('cookie', $index, $default);
 	}
 
 	/**
@@ -376,7 +359,45 @@ class Input
 	 */
 	public static function server($index = null, $default = null)
 	{
-		return (is_null($index) and func_num_args() === 0) ? $_SERVER : \Arr::get($_SERVER, strtoupper($index), $default);
+		return static::get_global('server', strtoupper($index), $default);
+	}
+
+	/**
+	 * Gets a global from the request if it is set.  If there it is no active
+	 * request it will use the PHP defaults.
+	 *
+	 * @param   string  Type of global ('get', 'post', etc)
+	 * @param   string  Name of the global (null for all)
+	 * @param   mixed   Default to return if not exist
+	 * @return  mixed
+	 */
+	protected static function get_global($type, $index = null, $default = null)
+	{
+		$type = strtoupper($type);
+		if ( ! class_exists('Request', false) or \Request::active() == null)
+		{
+			// We have to use a stupid cache here because PHP doesn't all us to use superglobals
+			// as variable variables, so using a stupid cache helps speed it up a bit.
+			static $stupid_cache = array();
+
+			if ( ! array_key_exists($type, $stupid_cache))
+			{
+				if ($type === 'PUT' or $type === 'DELETE')
+				{
+					parse_str(file_get_contents('php://input'), $put_delete);
+					$stupid_cache[$type] = $put_delete;
+				}
+				else
+				{
+					// We use eval here because PHP is stupid and doesn't allow us to use superglobals
+					// as variable variables inside methods.
+					$stupid_cache[$type] = eval('return $_'.$type.';');
+				}
+			}
+			return is_null($index) ? $stupid_cache[$type] : \Arr::get($stupid_cache[$type], $index, $default);
+		}
+
+		return \Request::active()->get_global($type, $index, $default);
 	}
 
 	/**

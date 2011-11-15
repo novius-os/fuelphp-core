@@ -86,7 +86,7 @@ class Request
 	 * @param   mixed    Internal: whether to use the routes; external: driver type or array with settings (driver key must be set)
 	 * @return  Request  The new request object
 	 */
-	public static function forge($uri = null, $options = true)
+	public static function forge($uri = null, $options = true, array $globals = array(), $http_method = null)
 	{
 		logger(\Fuel::L_INFO, 'Creating a new Request with URI = "'.$uri.'"', __METHOD__);
 
@@ -99,7 +99,7 @@ class Request
 			return $class::forge($uri, $options);
 		}
 
-		$request = new static($uri, isset($options['route']) ? $options['route'] : true);
+		$request = new static($uri, isset($options['route']) ? $options['route'] : true, $globals, $http_method);
 		if (static::$active)
 		{
 			$request->parent = static::$active;
@@ -284,6 +284,29 @@ class Request
 	protected $children = array();
 
 	/**
+	 * @var  array  Holds all of the GET, POST, PUT and DELETE variables
+	 */
+	protected $globals = array(
+		'SERVER' => array(),
+		'FILES'  => array(),
+		'COOKIE' => array(),
+		'GET'    => array(),
+		'POST'   => array(),
+		'PUT'    => array(),
+		'DELETE' => array(),
+	);
+
+	/**
+	 * @var  bool  Whether the globals have been hydrated or not.
+	 */
+	protected $globals_hydrated = false;
+
+	/**
+	 * @var  string  HTTP Method of the request
+	 */
+	protected $http_method = null;
+
+	/**
 	 * Creates the new Request object by getting a new URI object, then parsing
 	 * the uri with the Route class.
 	 *
@@ -295,8 +318,15 @@ class Request
 	 * @param   bool    whether or not to route the URI
 	 * @return  void
 	 */
-	public function __construct($uri, $route = true)
+	public function __construct($uri, $route = true, array $globals = array(), $http_method = null)
 	{
+		// Setup the globals...merge the given ones with the global ones.
+		$this->set_globals($globals);
+		if ($http_method !== null)
+		{
+			$this->http_method($http_method);
+		}
+
 		$this->uri = new \Uri($uri);
 
 		// check if a module was requested
@@ -582,6 +612,147 @@ class Request
 	public function params()
 	{
 		return $this->named_params;
+	}
+
+	/**
+	 * Gets or sets the current request's HTTP method.
+	 *
+	 * @param   string  HTTP Method to set
+	 * @return  string
+	 */
+	public function http_method($method = null)
+	{
+		if ($this->http_method === null and $method === null)
+		{
+			$this->http_method = $this->global('SERVER', 'REQUEST_METHOD', 'GET');
+		}
+		elseif ($method !== null)
+		{
+			$this->http_method = $method;
+			$this->set_global('SERVER', 'REQUEST_METHOD', $method);
+		}
+		return $this->http_method;
+	}
+
+	/**
+	 * Resets the globals array
+	 *
+	 * @return  $this
+	 */
+	public function reset_globals()
+	{
+		$this->globals_hydrated = false;
+
+		$this->globals = array(
+			'SERVER' => array(),
+			'FILES'  => array(),
+			'COOKIE' => array(),
+			'GET'    => array(),
+			'POST'   => array(),
+			'PUT'    => array(),
+			'DELETE' => array(),
+		);
+
+		return $this;
+	}
+
+	/**
+	 * Sets all the globals based on the PHP default globals.
+	 *
+	 * @return  $this
+	 */
+	public function auto_globals()
+	{
+		$this->reset_globals();
+		$this->globals_hydrated = true;
+		parse_str(file_get_contents('php://input'), $put_delete);
+
+		$this->globals = array(
+			'SERVER' => $_SERVER,
+			'FILES'  => $_FILES,
+			'COOKIE' => $_COOKIE,
+			'GET'    => $_GET,
+			'POST'   => $_POST,
+			'PUT'    => $put_delete,
+			'DELETE' => $put_delete,
+		);
+
+		return $this;
+	}
+
+	/**
+	 * Sets all the globals for this request.  By default it will merge the sent globals with
+	 * the default globals.
+	 *
+	 * @param   array  Globals for the request
+	 * @param   bool   Whether to merge in defaults or not
+	 */
+	public function set_globals(array $globals, $merge_with_globals = true)
+	{
+		$this->reset_globals();
+		if ($merge_with_globals)
+		{
+			$this->auto_globals();
+		}
+
+		$this->globals = $globals + $this->globals;
+		$this->globals_hydrated = true;
+
+		return $this;
+	}
+
+	/**
+	 * Sets a specific global.
+	 *
+	 * @param   string  Type of global ('get', 'post', etc)
+	 * @param   string  Name of the global
+	 * @param   mixed   Value to set
+	 * @return  $this
+	 */
+	public function set_global($type, $name, $value)
+	{
+		if ( ! $this->globals_hydrated)
+		{
+			$this->auto_globals();
+		}
+
+		if ( ! array_key_exists($type, $this->globals))
+		{
+			$this->globals[$type] = array();
+		}
+
+		\Arr::set($this->globals[$type], $name, $value);
+
+		return $this;
+	}
+
+	/**
+	 * Gets a specific global.
+	 *
+	 * @param   string  Type of global ('get', 'post', etc)
+	 * @param   string  Name of the global (null for all)
+	 * @param   mixed   Default to return if not exist
+	 * @return  mixed
+	 */
+	public function get_global($type, $name = null, $default = null)
+	{
+		$type = strtoupper($type);
+		if ( ! $this->globals_hydrated)
+		{
+			$this->auto_globals();
+		}
+
+		if ( ! array_key_exists($type, $this->globals))
+		{
+			throw new \InvalidArgumentException(sprintf('Type "%s" is not a valid type.', $type));
+		}
+
+		if ($name === null)
+		{
+			return $this->globals[$type];
+		}
+
+		return \Arr::get($this->globals[$type], $name, $default);
 	}
 
 	/**
