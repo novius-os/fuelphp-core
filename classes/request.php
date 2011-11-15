@@ -716,6 +716,7 @@ class Request
 			$this->auto_globals();
 		}
 
+		$type = strtoupper($type);
 		if ( ! array_key_exists($type, $this->globals))
 		{
 			$this->globals[$type] = array();
