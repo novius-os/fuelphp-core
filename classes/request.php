@@ -332,35 +332,33 @@ class Request
 		// check if a module was requested
 		if (count($this->uri->segments) and $module_path = \Fuel::module_exists($this->uri->segments[0]))
 		{
-			// check if the module has routes
-			if (is_file($module_path .= 'config/routes.php'))
+			$routes = $this->prep_module_routes($this->uri->segments[0], $module_path);
+
+			if ( ! empty($routes))
 			{
-				$module = $this->uri->segments[0];
-
-				// load and add the module routes
-				$module_routes = \Fuel::load($module_path);
-
-				$prepped_routes = array();
-				foreach($module_routes as $name => $_route)
-				{
-					if ($name === '_root_')
-					{
-						$name = $module;
-					}
-					elseif (strpos($name, $module.'/') !== 0 and $name != $module and $name !== '_404_')
-					{
-						$name = $module.'/'.$name;
-					}
-
-					$prepped_routes[$name] = $_route;
-				};
-
-				// update the loaded list of routes
 				\Router::add($prepped_routes, null, true);
 			}
 		}
 
 		$this->route = \Router::process($this, $route);
+
+		if ($this->route and $this->route->module !== null)
+		{
+			$module_path = \Fuel::module_exists($this->route->module);
+			$this->add_path($module_path);
+			$routes = $this->prep_module_routes($this->route->module, $module_path);
+
+			if ( ! empty($routes))
+			{
+				\Router::add($prepped_routes, null, true);
+				$route = \Router::process($this, $route);
+
+				if ($route != null)
+				{
+					$this->route = $route;
+				}
+			}
+		}
 
 		if ( ! $this->route)
 		{
@@ -372,11 +370,6 @@ class Request
 		$this->action = $this->route->action;
 		$this->method_params = $this->route->method_params;
 		$this->named_params = $this->route->named_params;
-
-		if ($this->route->module !== null)
-		{
-			$this->add_path(\Fuel::module_exists($this->module));
-		}
 	}
 
 	/**
@@ -769,5 +762,44 @@ class Request
 	public function __toString()
 	{
 		return (string) $this->response;
+	}
+
+	/**
+	 * Loads and preps a modules routes for use.
+	 *
+	 * @param   string  The module name
+	 * @param   string  The path to the module
+	 * @return  array   Prepped array of routes
+	 */
+	protected function prep_module_routes($module, $module_path)
+	{
+		$prepped_routes = array();
+
+		// check if the module has routes
+		if (is_file($module_path .= 'config'.DS.'routes.php'))
+		{
+			// load and add the module routes
+			$module_routes = \Fuel::load($module_path);
+
+			if ( ! is_array($module_routes))
+			{
+				$module_routes = array();
+			}
+
+			foreach($module_routes as $name => $route)
+			{
+				if ($name === '_root_')
+				{
+					$name = $module;
+				}
+				elseif (strpos($name, $module.'/') !== 0 and $name != $module and $name !== '_404_')
+				{
+					$name = $module.'/'.$name;
+				}
+
+				$prepped_routes[$name] = $route;
+			}
+		}
+		return $prepped_routes;
 	}
 }
