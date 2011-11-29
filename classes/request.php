@@ -336,7 +336,7 @@ class Request
 
 			if ( ! empty($routes))
 			{
-				\Router::add($prepped_routes, null, true);
+				\Router::add($routes, null, true);
 			}
 		}
 
@@ -350,7 +350,7 @@ class Request
 
 			if ( ! empty($routes))
 			{
-				\Router::add($prepped_routes, null, true);
+				\Router::add($routes, null, true);
 				$route = \Router::process($this, $route);
 
 				if ($route != null)
