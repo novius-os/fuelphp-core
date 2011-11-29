@@ -340,7 +340,7 @@ class Request
 			}
 		}
 
-		$this->route = \Router::process($this, $route);
+		$this->route = \Router::process($this->uri->get(), $route);
 
 		if ($this->route and $this->route->module !== null)
 		{
@@ -351,7 +351,7 @@ class Request
 			if ( ! empty($routes))
 			{
 				\Router::add($routes, null, true);
-				$route = \Router::process($this, $route);
+				$route = \Router::process(implode('/', $this->route->segments), $route);
 
 				if ($route != null)
 				{

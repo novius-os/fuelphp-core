@@ -102,7 +102,7 @@ class Route
 			'[[:alpha:]]+',
 			'[^/]*',
 		), $this->path);
-					
+
 		return preg_replace('#(?<!\[\[):([a-z\_]+)(?!:\]\])#uD', '(?P<$1>.+?)', $search);
 	}
 
@@ -113,10 +113,8 @@ class Route
 	 * @param	object	The URI object
 	 * @return	array
 	 */
-	public function parse(\Request $request)
+	public function parse($uri)
 	{
-		$uri = $request->uri->get();
-
 		if ($uri === '' and $this->path === '_root_')
 		{
 			return $this->matched();

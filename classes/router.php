@@ -92,7 +92,7 @@ class Router
 	 * @param	bool		whether to use the defined routes or not
 	 * @return	mixed		the match array or false
 	 */
-	public static function process(\Request $request, $route = true)
+	public static function process($uri, $route = true)
 	{
 		$match = false;
 
@@ -100,7 +100,7 @@ class Router
 		{
 			foreach (static::$routes as $route)
 			{
-				if ($match = $route->parse($request))
+				if ($match = $route->parse($uri))
 				{
 					break;
 				}
@@ -110,8 +110,8 @@ class Router
 		if ( ! $match)
 		{
 			// Since we didn't find a match, we will create a new route.
-			$match = new Route(preg_quote($request->uri->get(), '#'), $request->uri->get());
-			$match->parse($request);
+			$match = new Route(preg_quote($uri, '#'), $uri);
+			$match->parse($uri);
 		}
 
 		if ($match->callable !== null)
