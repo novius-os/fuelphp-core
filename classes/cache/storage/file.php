@@ -212,6 +212,9 @@ class Cache_Storage_File extends \Cache_Storage_Driver
 		// wait for a lock
 		while ( ! flock($handle, LOCK_EX));
 
+		// truncate the file
+		ftruncate($handle, 0);
+
 		// write the session data
 		fwrite($handle, $payload);
 
@@ -245,7 +248,7 @@ class Cache_Storage_File extends \Cache_Storage_Driver
 		}
 
 		// wait for a lock
-		while( ! flock($handle, LOCK_EX));
+		while( ! flock($handle, LOCK_SH));
 
 		// read the session data
 		$payload = fread($handle, filesize($file));

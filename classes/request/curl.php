@@ -34,9 +34,6 @@ class Request_Curl extends \Request_Driver
 			$this->http_login($options['user'], $options['pass'], $options['auth']);
 		}
 
-		// we want to handle failure ourselves
-		$this->set_option('failonerror', false);
-
 		parent::__construct($resource, $options, $method);
 	}
 
@@ -108,7 +105,7 @@ class Request_Curl extends \Request_Driver
 		}
 		if ( ! isset($this->options[CURLOPT_FAILONERROR]))
 		{
-			$this->options[CURLOPT_FAILONERROR] = true;
+			$this->options[CURLOPT_FAILONERROR] = false;
 		}
 
 		// Only set follow location if not running securely

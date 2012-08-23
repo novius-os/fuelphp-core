@@ -148,11 +148,15 @@ abstract class Request_Driver
 	 * Sets options on the driver
 	 *
 	 * @param   array  $options
-	 * @return  Request_Curl
+	 * @return  Request_Driver
 	 */
 	public function set_options(array $options)
 	{
-		$this->options = $options;
+		foreach ($options as $key => $val)
+		{
+			$this->options[$key] = $val;
+		}
+
 		return $this;
 	}
 
@@ -161,7 +165,7 @@ abstract class Request_Driver
 	 *
 	 * @param   int|string  $option
 	 * @param   mixed       $value
-	 * @return  Request_Curl
+	 * @return  Request_Driver
 	 */
 	public function set_option($option, $value)
 	{
@@ -267,7 +271,7 @@ abstract class Request_Driver
 	/**
 	 * Reset before doing another request
 	 *
-	 * @return  Request_Curl
+	 * @return  Request_Driver
 	 */
 	protected function set_defaults()
 	{
