@@ -2,12 +2,12 @@
 /**
  * Part of the Fuel framework.
  *
- * @package    Fuel
- * @version    1.5
- * @author     Fuel Development Team
- * @license    MIT License
+ * @package	Fuel
+ * @version	1.5
+ * @author	 Fuel Development Team
+ * @license	MIT License
  * @copyright  2010 - 2013 Fuel Development Team
- * @link       http://fuelphp.com
+ * @link	   http://fuelphp.com
  */
 
 namespace Fuel\Core;
@@ -39,8 +39,8 @@ class Fieldset
 	/**
 	 * Create Fieldset object
 	 *
-	 * @param   string    Identifier for this fieldset
-	 * @param   array     Configuration array
+	 * @param   string	Identifier for this fieldset
+	 * @param   array	 Configuration array
 	 * @return  Fieldset
 	 */
 	public static function forge($name = 'default', array $config = array())
@@ -213,7 +213,7 @@ class Fieldset
 	 * Set the tag to be used for this fieldset
 	 *
 	 * @param  string  $tag
-	 * @return  Fieldset       this, to allow chaining
+	 * @return  Fieldset	   this, to allow chaining
 	 */
 	public function set_fieldset_tag($tag)
 	{
@@ -379,9 +379,9 @@ class Fieldset
 	/**
 	 * Get Field instance
 	 *
-	 * @param   string|null           field name or null to fetch an array of all
-	 * @param   bool                  whether to get the fields array or flattened array
-	 * @param   bool                  whether to include tabular form fields in the flattened array
+	 * @param   string|null		   field name or null to fetch an array of all
+	 * @param   bool				  whether to get the fields array or flattened array
+	 * @param   bool				  whether to include tabular form fields in the flattened array
 	 * @return  Fieldset_Field|false  returns false when field wasn't found
 	 */
 	public function field($name = null, $flatten = false, $tabular_form = true)
@@ -427,8 +427,8 @@ class Fieldset
 	 *
 	 * @param   string|Object  either a full classname (including full namespace) or object instance
 	 * @param   array|Object   array or object that has the exactly same named properties to populate the fields
-	 * @param   string         method name to call on model for field fetching
-	 * @return  Fieldset       this, to allow chaining
+	 * @param   string		 method name to call on model for field fetching
+	 * @return  Fieldset	   this, to allow chaining
 	 */
 	public function add_model($class, $instance = null, $method = 'set_form_fields')
 	{
@@ -473,7 +473,7 @@ class Fieldset
 	 * Get a single or multiple config values by key
 	 *
 	 * @param   string|array  a single key or multiple in an array, empty to fetch all
-	 * @param   mixed         default output when config wasn't set
+	 * @param   mixed		 default output when config wasn't set
 	 * @return  mixed|array   a single config value or multiple in an array when $key input was an array
 	 */
 	public function get_config($key = null, $default = null)
@@ -521,10 +521,21 @@ class Fieldset
 				{
 					$f->set_value($input[$f->basename], true);
 				}
+				elseif (isset($input[$f->name]))
+				{
+					$f->set_value($input[$f->name], true);
+				}
 			}
-			elseif (is_object($input) and property_exists($input, $f->basename))
+			elseif (is_object($input))
 			{
-				$f->set_value($input->{$f->basename}, true);
+				if (property_exists($input, $f->basename))
+				{
+					$f->set_value($input->{$f->basename}, true);
+				}
+				elseif (property_exists($input, $f->name))
+				{
+					$f->set_value($input->{$f->name}, true);
+				}
 			}
 		}
 
@@ -540,7 +551,7 @@ class Fieldset
 	/**
 	 * Set all fields to the input from get or post (depends on the form method attribute)
 	 *
-	 * @return  Fieldset      this, to allow chaining
+	 * @return  Fieldset	  this, to allow chaining
 	 */
 	public function repopulate()
 	{
@@ -626,7 +637,7 @@ class Fieldset
 	/**
 	 * Enable a disabled field from being build
 	 *
-	 * @return  Fieldset      this, to allow chaining
+	 * @return  Fieldset	  this, to allow chaining
 	 */
 	public function enable($name = null)
 	{
@@ -647,7 +658,7 @@ class Fieldset
 	/**
 	 * Disable a field from being build
 	 *
-	 * @return  Fieldset      this, to allow chaining
+	 * @return  Fieldset	  this, to allow chaining
 	 */
 	public function disable($name = null)
 	{
