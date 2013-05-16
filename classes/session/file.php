@@ -3,7 +3,7 @@
  * Part of the Fuel framework.
  *
  * @package    Fuel
- * @version    1.5
+ * @version    1.6
  * @author     Fuel Development Team
  * @license    MIT License
  * @copyright  2010 - 2013 Fuel Development Team
@@ -252,6 +252,10 @@ class Session_File extends \Session_Driver
 
 			// close the file
 			fclose($handle);
+		}
+		else
+		{
+			throw new \FuelException('Could not open the session file in "'.$this->config['path']." for write access");
 		}
 
 		return $exists;

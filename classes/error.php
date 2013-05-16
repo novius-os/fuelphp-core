@@ -3,7 +3,7 @@
  * Part of the Fuel framework.
  *
  * @package    Fuel
- * @version    1.5
+ * @version    1.6
  * @author     Fuel Development Team
  * @license    MIT License
  * @copyright  2010 - 2013 Fuel Development Team
@@ -19,7 +19,10 @@ class PhpErrorException extends \ErrorException
 {
 	public static $count = 0;
 
-	public function handle()
+	/**
+	 * Allow the error handler from recovering from error types defined in the config
+	 */
+	public function recover()
 	{
 		// handle the error based on the config and the environment we're in
 		if (static::$count <= Config::get('errors.throttle', 10))
@@ -145,8 +148,9 @@ class Error
 			}
 			else
 			{
+				// non-fatal, recover from the error
 				$e = new \PhpErrorException($message, $severity, 0, $filepath, $line);
-				$e->handle();
+				$e->recover();
 			}
 		}
 

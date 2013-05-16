@@ -3,7 +3,7 @@
  * Part of the Fuel framework.
  *
  * @package    Fuel
- * @version    1.5
+ * @version    1.6
  * @author     Fuel Development Team
  * @license    MIT License
  * @copyright  2010 - 2013 Fuel Development Team
@@ -54,6 +54,8 @@ if ( ! function_exists('logger'))
 			throw new \FuelException('Invalid level "'.$level.'" passed to logger()');
 		}
 
+		if(is_string($level))	$level = array_search(strtoupper($level), $labels);
+
 		// get the levels defined to be logged
 		$loglabels = \Config::get('log_threshold');
 
@@ -85,8 +87,6 @@ if ( ! function_exists('logger'))
 		{
 			return false;
 		}
-
-		! class_exists('Log') and \Package::load('log');
 
 		return \Log::instance()->log($level, (empty($method) ? '' : $method.' - ').$msg);
 	}
@@ -204,9 +204,9 @@ if ( ! function_exists('render'))
  */
 if ( ! function_exists('__'))
 {
-	function __($string, $params = array(), $default = null)
+	function __($string, $params = array(), $default = null, $language = null)
 	{
-		return \Lang::get($string, $params, $default);
+		return \Lang::get($string, $params, $default, $language);
 	}
 }
 

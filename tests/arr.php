@@ -3,7 +3,7 @@
  * Part of the Fuel framework.
  *
  * @package    Fuel
- * @version    1.5
+ * @version    1.6
  * @author     Fuel Development Team
  * @license    MIT License
  * @copyright  2010 - 2013 Fuel Development Team
@@ -659,6 +659,97 @@ class Test_Arr extends TestCase
 		$this->assertTrue(Arr::is_multi($arr_multi_strange, false));
 		$this->assertFalse(Arr::is_multi($arr_multi_strange, true));
 	}
+
+	/**
+	 * Tests Arr::search()
+	 *
+	 * @test
+	 */
+	public function test_search_single_array()
+	{
+		// Single array
+		$arr_single = array('one' => 1, 'two' => 2);
+		$expected = 'one';
+		$this->assertEquals($expected, Arr::search($arr_single, 1));
+
+		// Default
+		$expected = null;
+		$this->assertEquals($expected, Arr::search($arr_single, 3));
+		$expected = 'three';
+		$this->assertEquals($expected, Arr::search($arr_single, 3, 'three'));
+
+		// Single array (int key)
+		$arr_single = array(0 => 'zero', 'one' => 1, 'two' => 2);
+		$expected = 0;
+		$this->assertEquals($expected, Arr::search($arr_single, 0));
+	}
+
+	/**
+	 * Tests Arr::search()
+	 *
+	 * @test
+	 */
+	public function test_search_multi_array()
+	{
+		// Multi-dimensional array
+		$arr_multi = array('one' => array('test' => 1), 'two' => array('test' => 2), 'three' => array('test' => array('a' => 'a', 'b' => 'b')));
+		$expected = 'one';
+		$this->assertEquals($expected, Arr::search($arr_multi, array('test' => 1), null, false));
+		$expected = null;
+		$this->assertEquals($expected, Arr::search($arr_multi, 1, null, false));
+
+		// Multi-dimensional array (recursive)
+		$expected = 'one.test';
+		$this->assertEquals($expected, Arr::search($arr_multi, 1));
+
+		$expected = 'three.test.b';
+		$this->assertEquals($expected, Arr::search($arr_multi, 'b', null, true));
+	}
+
+
+	/**
+	 * Tests Arr::sum()
+	 *
+	 * @test
+	 */
+	public function test_sum_multi_array()
+	{
+		$arr_multi = array(
+			array(
+				'name' => 'foo',
+				'scores' => array(
+					'sports' => 5,
+					'math' => 20,
+				),
+			),
+			array(
+				'name' => 'bar',
+				'scores' => array(
+					'sports' => 7,
+					'math' => 15,
+				),
+			),
+			array(
+				'name' => 'fuel',
+				'scores' => array(
+					'sports' => 8,
+					'math' => 5,
+				),
+			),
+			array(
+				'name' => 'php',
+				'scores' => array(
+					'math' => 10,
+				),
+			),
+		);
+
+		$expected = 50;
+		$test = \Arr::sum($arr_multi, 'scores.math');
+		$this->assertEquals($expected, $test);
+
+		$expected = 20;
+		$test = \Arr::sum($arr_multi, 'scores.sports');
+		$this->assertEquals($expected, $test);
+	}
 }
-
-

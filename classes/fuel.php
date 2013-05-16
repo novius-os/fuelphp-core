@@ -3,7 +3,7 @@
  * Part of the Fuel framework.
  *
  * @package    Fuel
- * @version    1.5
+ * @version    1.6
  * @author     Fuel Development Team
  * @license    MIT License
  * @copyright  2010 - 2013 Fuel Development Team
@@ -29,7 +29,7 @@ class Fuel
 	/**
 	 * @var  string  The version of Fuel
 	 */
-	const VERSION = '1.5';
+	const VERSION = '1.6';
 
 	/**
 	 * @var  string  constant used for when in testing mode
@@ -49,7 +49,7 @@ class Fuel
 	/**
 	 * @var  string  constant used for when testing the app in a staging env.
 	 */
-	const STAGE = 'stage';
+	const STAGING = 'staging';
 
 	/**
 	 * @var  int  No logging
@@ -146,8 +146,16 @@ class Fuel
 		static::$profiling and \Profiler::init();
 
 		// set a default timezone if one is defined
-		static::$timezone = \Config::get('default_timezone') ?: date_default_timezone_get();
-		date_default_timezone_set(static::$timezone);
+		try
+		{
+			static::$timezone = \Config::get('default_timezone') ?: date_default_timezone_get();
+			date_default_timezone_set(static::$timezone);
+		}
+		catch (\Exception $e)
+		{
+			date_default_timezone_set('UTC');
+			throw new \PHPErrorException($e->getMessage());
+		}
 
 		static::$encoding = \Config::get('encoding', static::$encoding);
 		MBSTRING and mb_internal_encoding(static::$encoding);
@@ -291,9 +299,9 @@ class Fuel
 		{
 			foreach ($array['classes'] as $class)
 			{
-				if ( ! class_exists($class = ucfirst($class)))
+				if ( ! class_exists($class = \Str::ucwords($class)))
 				{
-					throw new \FuelException('Always load class does not exist. Unable to load: '.$class);
+					throw new \FuelException('Class '.$class.' defined in your "always_load" config could not be loaded.');
 				}
 			}
 		}

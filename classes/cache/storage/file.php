@@ -3,7 +3,7 @@
  * Part of the Fuel framework.
  *
  * @package    Fuel
- * @version    1.5
+ * @version    1.6
  * @author     Fuel Development Team
  * @license    MIT License
  * @copyright  2010 - 2013 Fuel Development Team
@@ -32,6 +32,21 @@ class Cache_Storage_File extends \Cache_Storage_Driver
 	 */
 	protected $config = array();
 
+	// ---------------------------------------------------------------------
+
+	public static function _init()
+	{
+		\Config::load('file', true);
+
+		// make sure the configured chmod values are octal
+		$chmod = \Config::get('file.chmod.folders', 0777);
+		is_string($chmod) and \Config::set('file.chmod.folders', octdec($chmod));
+		$chmod = \Config::get('file.chmod.files', 0666);
+		is_string($chmod) and \Config::set('file.chmod.files', octdec($chmod));
+	}
+
+	// ---------------------------------------------------------------------
+
 	public function __construct($identifier, $config)
 	{
 		parent::__construct($identifier, $config);
@@ -51,6 +66,98 @@ class Cache_Storage_File extends \Cache_Storage_Driver
 			throw new \FuelException('Cache directory does not exist or is not writable.');
 		}
 	}
+
+	/**
+	 * Check if other caches or files have been changed since cache creation
+	 *
+	 * @param   array
+	 * @return  bool
+	 */
+	public function check_dependencies(array $dependencies)
+	{
+		foreach($dependencies as $dep)
+		{
+			if (file_exists($file = static::$path.str_replace('.', DS, $dep).'.cache'))
+			{
+				$filemtime = filemtime($file);
+				if ($filemtime === false || $filemtime > $this->created)
+				{
+					return false;
+				}
+			}
+			elseif (file_exists($dep))
+			{
+				$filemtime = filemtime($file);
+				if ($filemtime === false || $filemtime > $this->created)
+				{
+					return false;
+				}
+			}
+			else
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * Delete Cache
+	 */
+	public function delete()
+	{
+		if (file_exists($file = static::$path.$this->identifier_to_path($this->identifier).'.cache'))
+		{
+			unlink($file);
+			$this->reset();
+		}
+	}
+
+	/**
+	 * Purge all caches
+	 *
+	 * @param   limit purge to subsection
+	 * @return  bool
+	 */
+	public function delete_all($section)
+	{
+		$path = rtrim(static::$path, '\\/').DS;
+		$section = static::identifier_to_path($section).DS;
+
+		$files = \File::read_dir($path.$section, -1, array('\.cache$' => 'file'));
+
+		$delete = function($path, $files) use(&$delete, &$section)
+		{
+			$path = rtrim($path, '\\/').DS;
+
+			foreach ($files as $dir => $file)
+			{
+				if (is_numeric($dir))
+				{
+					if ( ! $result = \File::delete($path.$file))
+					{
+						return $result;
+					}
+				}
+				else
+				{
+					if ( ! $result = ($delete($path.$dir, $file) and rmdir($path.$dir)))
+					{
+						return $result;
+					}
+				}
+			}
+
+			$section !== '' and rmdir($path);
+
+			return true;
+		};
+
+		return $delete($path.$section, $files);
+	}
+
+	// ---------------------------------------------------------------------
 
 	/**
 	 * Translates a given identifier to a valid path
@@ -113,97 +220,6 @@ class Cache_Storage_File extends \Cache_Storage_Driver
 	}
 
 	/**
-	 * Check if other caches or files have been changed since cache creation
-	 *
-	 * @param   array
-	 * @return  bool
-	 */
-	public function check_dependencies(array $dependencies)
-	{
-		foreach($dependencies as $dep)
-		{
-			if (file_exists($file = static::$path.str_replace('.', DS, $dep).'.cache'))
-			{
-				$filemtime = filemtime($file);
-				if ($filemtime === false || $filemtime > $this->created)
-				{
-					return false;
-				}
-			}
-			elseif (file_exists($dep))
-			{
-				$filemtime = filemtime($file);
-				if ($filemtime === false || $filemtime > $this->created)
-				{
-					return false;
-				}
-			}
-			else
-			{
-				return false;
-			}
-		}
-		return true;
-	}
-
-	/**
-	 * Delete Cache
-	 */
-	public function delete()
-	{
-		if (file_exists($file = static::$path.$this->identifier_to_path($this->identifier).'.cache'))
-		{
-			unlink($file);
-			$this->reset();
-		}
-	}
-
-	// ---------------------------------------------------------------------
-
-	/**
-	 * Purge all caches
-	 *
-	 * @param   limit purge to subsection
-	 * @return  bool
-	 */
-	public function delete_all($section)
-	{
-		$path = rtrim(static::$path, '\\/').DS;
-		$section = static::identifier_to_path($section);
-
-		$files = \File::read_dir($path.$section, -1, array('\.cache$' => 'file'));
-
-		$delete = function($path, $files) use(&$delete, &$section)
-		{
-			$path = rtrim($path, '\\/').DS;
-
-			foreach ($files as $dir => $file)
-			{
-				if (is_numeric($dir))
-				{
-					if ( ! $result = \File::delete($path.$file))
-					{
-						return $result;
-					}
-				}
-				else
-				{
-					if ( ! $result = ($delete($path.$dir, $file) and rmdir($path.$dir)))
-					{
-						return $result;
-					}
-				}
-			}
-
-			$section !== '' and rmdir($path);
-
-			return true;
-		};
-
-		return $delete($path.$section, $files);
-	}
-
-	/**
 	 * Save a cache, this does the generic pre-processing
 	 *
 	 * @return  bool  success
@@ -218,21 +234,39 @@ class Cache_Storage_File extends \Cache_Storage_Driver
 		if (count($subdirs) > 1)
 		{
 			array_pop($subdirs);
-			$test_path = static::$path.implode(DS, $subdirs);
 
 			// check if specified subdir exists
-			if ( ! @is_dir($test_path))
+			if ( ! @is_dir(static::$path.implode(DS, $subdirs)))
 			{
-				// create non existing dir
-				if ( ! @mkdir($test_path, 0755, true))
+				// recursively create the directory. we can't use mkdir permissions or recursive
+				// due to the fact that mkdir is restricted by the current users umask
+				$basepath = rtrim(static::$path,DS);
+				$chmod = \Config::get('file.chmod.folders', 0775);
+				foreach ($subdirs as $dir)
 				{
-					return false;
+					$basepath .= DS.$dir;
+					if ( ! is_dir($basepath))
+					{
+						try
+						{
+							if ( ! mkdir($basepath))
+							{
+								return false;
+							}
+							chmod($basepath, $chmod);
+						}
+						catch (\PHPErrorException $e)
+						{
+							return false;
+						}
+					}
 				}
 			}
 		}
 
 		// write the cache
 		$file = static::$path.$id_path.'.cache';
+
 		$handle = fopen($file, 'c');
 
 		if ( ! $handle)
@@ -254,6 +288,9 @@ class Cache_Storage_File extends \Cache_Storage_Driver
 
 		// close the file
 		fclose($handle);
+
+		// set the correct rights on the file
+		chmod($file, \Config::get('file.chmod.files', 0666));
 
 		return true;
 	}
@@ -309,7 +346,7 @@ class Cache_Storage_File extends \Cache_Storage_Driver
 	 * @param   mixed   value
 	 * @return  mixed
 	 */
-	private function _validate_config($name, $value)
+	protected function _validate_config($name, $value)
 	{
 		switch ($name)
 		{

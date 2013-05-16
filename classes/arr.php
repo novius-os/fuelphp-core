@@ -3,7 +3,7 @@
  * Part of the Fuel framework.
  *
  * @package    Fuel
- * @version    1.5
+ * @version    1.6
  * @author     Fuel Development Team
  * @license    MIT License
  * @copyright  2010 - 2013 Fuel Development Team
@@ -892,5 +892,105 @@ class Arr
 	{
 		$values = array_filter($arr, 'is_array');
 		return $all_keys ? count($arr) === count($values) : count($values) > 0;
+	}
+
+	/**
+	 * Searches the array for a given value and returns the
+	 * corresponding key or default value.
+	 * If $recursive is set to true, then the Arr::search()
+	 * function will return a delimiter-notated key using $delimiter.
+	 *
+	 * @param   array   $array     The search array
+	 * @param   mixed   $value     The searched value
+	 * @param   string  $default   The default value
+	 * @param   bool    $recursive Whether to get keys recursive
+	 * @param   string  $delimiter The delimiter, when $recursive is true
+	 * @return  mixed
+	 */
+	public static function search($array, $value, $default = null, $recursive = true, $delimiter = '.')
+	{
+		if ( ! is_array($array) and ! $array instanceof \ArrayAccess)
+		{
+			throw new \InvalidArgumentException('First parameter must be an array or ArrayAccess object.');
+		}
+
+		if ( ! is_null($default) and ! is_int($default) and ! is_string($default))
+		{
+			throw new \InvalidArgumentException('Expects parameter 3 to be an string or integer or null.');
+		}
+
+		if ( ! is_string($delimiter))
+		{
+			throw new \InvalidArgumentException('Expects parameter 5 must be an string.');
+		}
+
+		$key = array_search($value, $array);
+
+		if ($recursive and $key === false)
+		{
+			$keys = array();
+			foreach ($array as $k => $v)
+			{
+				if (is_array($v))
+				{
+					$rk = static::search($v, $value, $default, true, $delimiter);
+					if ($rk !== $default)
+					{
+						$keys = array($k, $rk);
+						break;
+					}
+				}
+			}
+			$key = count($keys) ? implode($delimiter, $keys) : false;
+		}
+
+		return $key === false ? $default : $key;
+	}
+
+	/**
+	 * Returns only unique values in an array. It does not sort. First value is used.
+	 *
+	 * @param   array  $arr       the array to dedup
+	 * @return  array   array with only de-duped values
+	 */
+	public static function unique($arr)
+	{
+		// filter out all duplicate values
+		return array_filter($arr, function($item)
+		{
+			// contrary to popular belief, this is not as static as you think...
+			static $vars = array();
+
+			if (in_array($item, $vars, true))
+			{
+				// duplicate
+				return false;
+			}
+			else
+			{
+				// record we've had this value
+				$vars[] = $item;
+
+				// unique
+				return true;
+			}
+		});
+	}
+
+	/**
+	 * Calculate the sum of an array
+	 *
+	 * @param   array    $array  the array containing the values
+	 * @param   string   $key    key of the value to pluck
+	 * @return  numeric  the sum value
+	 */
+	public static function sum($array, $key)
+	{
+		if ( ! is_array($array) and ! $array instanceof \ArrayAccess)
+		{
+			throw new \InvalidArgumentException('First parameter must be an array or ArrayAccess object.');
+		}
+
+		return array_sum(static::pluck($array, $key));
 	}
 }

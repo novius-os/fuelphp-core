@@ -2,10 +2,17 @@
 /**
  * Part of the Fuel framework.
  *
+<<<<<<< HEAD
  * @package	Fuel
  * @version	1.5
  * @author	 Fuel Development Team
  * @license	MIT License
+=======
+ * @package    Fuel
+ * @version    1.6
+ * @author     Fuel Development Team
+ * @license    MIT License
+>>>>>>> fuelphp/1.6/master
  * @copyright  2010 - 2013 Fuel Development Team
  * @link	   http://fuelphp.com
  */
@@ -517,14 +524,13 @@ class Fieldset
 		{
 			if (is_array($input) or $input instanceof \ArrayAccess)
 			{
-				if (isset($input[$f->basename]))
-				{
-					$f->set_value($input[$f->basename], true);
-				}
-				elseif (isset($input[$f->name]))
-				{
-					$f->set_value($input[$f->name], true);
-				}
+				// convert form field array's to Fuel dotted notation
+				$name = str_replace(array('[',']'), array('.', ''), $f->name);
+
+				// fetch the value for this field, and set it if found
+				$value = \Arr::get($input, $name, null);
+				$value === null and $value = \Arr::get($input, $f->basename, null);
+				$value !== null and $f->set_value($value, true);
 			}
 			elseif (is_object($input))
 			{
@@ -608,7 +614,7 @@ class Fieldset
 				{
 					continue;
 				}
-				$fields_output .= "\t".'<th class="'.$this->tabular_form_relation.'_col_'.$field.'">'.(isset($settings['label'])?\Lang::get($settings['label']):'').'</th>'.PHP_EOL;
+				$fields_output .= "\t".'<th class="'.$this->tabular_form_relation.'_col_'.$field.'">'.(isset($settings['label'])?\Lang::get($settings['label'], array(), $settings['label']):'').'</th>'.PHP_EOL;
 			}
 			$fields_output .= "\t".'<th>'.\Config::get('form.tabular_delete_label', 'Delete?').'</th>'.PHP_EOL;
 

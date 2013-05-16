@@ -3,7 +3,7 @@
  * Part of the Fuel framework.
  *
  * @package    Fuel
- * @version    1.5
+ * @version    1.6
  * @author     Fuel Development Team
  * @license    MIT License
  * @copyright  2010 - 2013 Fuel Development Team
@@ -382,7 +382,7 @@ class Theme
 	 * @param   string|View|ViewModel	$view   	chrome View, or name of the view
 	 * @param   string  				$var		Name of the variable in the chome that will output the partial
 	 *
-	 * @return  void
+	 * @return  View|ViewModel, the view partial
 	 */
 	public function set_chrome($section, $view, $var = 'content')
 	{
@@ -393,6 +393,8 @@ class Theme
 		}
 
 		$this->chrome[$section] = array('var' => $var, 'view' => $view);
+
+		return $view;
 	}
 
 	/**
@@ -627,12 +629,12 @@ class Theme
 	 * will be prefixed with the module name, so you don't have to hardcode the
 	 * module name as a view file prefix
 	 *
-	 * @param	$enable	enable if true, disable if false
+	 * @param	bool|string  $enable  enable if true or string, disable if false
 	 * @return	Theme
 	 */
 	public function use_modules($enable = true)
 	{
-		$this->config['use_modules'] = (bool) $enable;
+		$this->config['use_modules'] = $enable;
 
 		// return for chaining
 		return $this;
@@ -659,7 +661,11 @@ class Theme
 		$path_prefix = '';
 		if ($this->config['use_modules'] and $module = \Request::active()->module)
 		{
+			// we're using module name prefixing
 			$path_prefix = $module.DS;
+
+			// and modules are in a separate path
+			is_string($this->config['use_modules']) and $path_prefix = trim($this->config['use_modules'], '\\/').DS.$path_prefix;
 		}
 
 		foreach ($themes as $theme)

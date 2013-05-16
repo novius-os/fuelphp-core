@@ -3,7 +3,7 @@
  * Part of the Fuel framework.
  *
  * @package    Fuel
- * @version    1.5
+ * @version    1.6
  * @author     Fuel Development Team
  * @license    MIT License
  * @copyright  2010 - 2013 Fuel Development Team
@@ -55,6 +55,18 @@ return array(
 
 	'profiling'  => false,
 
+        /**
+	 * profiling_paths - The paths to show in profiler.
+	 *
+	 * If you do not wish to see path set to 'NULL'
+	 * You can also add other paths that you wish not to see
+	 */
+	'profiling_paths' => array(
+	    'APPPATH' => APPPATH,
+	    'COREPATH' => COREPATH,
+	    'PKGPATH' => PKGPATH,
+	),
+
 	/**
 	 * Default location for the file cache
 	 */
@@ -80,6 +92,8 @@ return array(
 		'throttle'     => 10,
 		// Should notices from Error::notice() be shown?
 		'notices'      => true,
+		// Render previous contents or show it as HTML?
+		'render_prior' => false,
 	),
 
 	/**

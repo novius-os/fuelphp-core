@@ -3,7 +3,7 @@
  * Part of the Fuel framework.
  *
  * @package    Fuel
- * @version    1.5
+ * @version    1.6
  * @author     Fuel Development Team
  * @license    MIT License
  * @copyright  2010 - 2013 Fuel Development Team
@@ -30,13 +30,13 @@ class DBUtil
 	/**
 	 * Sets the database connection to use for following DBUtil calls.
 	 *
-	 * @param  string|object  string connection name or \Database_Connection object, null for default
+	 * @param  string  $connection  connection name, null for default
 	 */
-	public static function set_connection($connection, $db = null)
+	public static function set_connection($connection)
 	{
-		if ( ! is_string($connection) and ($connection instanceof Database_Connection))
+		if ( ! is_string($connection))
 		{
-			throw new \FuelException('A connection must be supplied as a string or a Database_Connection object.');
+			throw new \FuelException('A connection must be supplied as a string.');
 		}
 
 		static::$connection = $connection;
@@ -348,6 +348,11 @@ class DBUtil
 			if (array_key_exists('AUTO_INCREMENT', $attr) and $attr['AUTO_INCREMENT'] === true)
 			{
 				$sql .= ' AUTO_INCREMENT';
+			}
+
+			if (array_key_exists('PRIMARY_KEY', $attr) and $attr['PRIMARY_KEY'] === true)
+			{
+				$sql .= ' PRIMARY KEY';
 			}
 
 			if (array_key_exists('FIRST', $attr) and $attr['FIRST'] === true)

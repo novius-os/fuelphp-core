@@ -3,7 +3,7 @@
  * Part of the Fuel framework.
  *
  * @package    Fuel
- * @version    1.5
+ * @version    1.6
  * @author     Fuel Development Team
  * @license    MIT License
  * @copyright  2010 - 2013 Fuel Development Team
@@ -24,16 +24,25 @@ abstract class Image_Driver
 	protected $queued_actions  = array();
 	protected $accepted_extensions;
 
-	public function __construct($config)
+	/**
+	 * Initialize by loading config
+	 *
+	 * @return void
+	 */
+	public static function _init()
 	{
 		\Config::load('image', true);
+	}
+
+	public function __construct($config)
+	{
 		if (is_array($config))
 		{
-			$this->config = array_merge(\Config::get('image'), $config);
+			$this->config = array_merge(\Config::get('image', array()), $config);
 		}
 		else
 		{
-			$this->config = \Config::get('image');
+			$this->config = \Config::get('image', array());
 		}
 		$this->debug("Image Class was initialized using the " . $this->config['driver'] . " driver.");
 	}
@@ -614,8 +623,13 @@ abstract class Image_Driver
 	 * @param   string  $permissions  Allows unix style permissions
 	 * @return  array
 	 */
-	public function save($filename, $permissions = null)
+	public function save($filename = null, $permissions = null)
 	{
+		if (empty($filename))
+		{
+			$filename = $this->image_filename;
+		}
+
 		$directory = dirname($filename);
 		if ( ! is_dir($directory))
 		{

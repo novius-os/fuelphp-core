@@ -3,7 +3,7 @@
  * Part of the Fuel framework.
  *
  * @package    Fuel
- * @version    1.5
+ * @version    1.6
  * @author     Fuel Development Team
  * @license    MIT License
  * @copyright  2010 - 2013 Fuel Development Team
@@ -175,9 +175,10 @@ class Route
 
 			if ($uri != '')
 			{
-				if ($this->strip_extension)
+				// strip the extension if needed and there is something to strip
+				if ($this->strip_extension and strrchr($uri, '.') == $ext = '.'.\Input::extension())
 				{
-					strpos($uri, $ext = \Input::extension()) === false or $uri = substr($uri, 0, -(strlen($ext)+1));
+					$uri = substr($uri, 0, -(strlen($ext)));
 				}
 
 				if ($this->case_sensitive)
@@ -217,7 +218,9 @@ class Route
 			{
 				$verb = $r[0];
 
-				if ($method == strtoupper($verb))
+				$protocol = isset($r[2]) ? ($r[2] ? 'https' : 'http') : false;
+
+				if (($protocol === false or $protocol == \Input::protocol()) and $method == strtoupper($verb))
 				{
 					$r[1]->search = $route->search;
 					$result = $route->_parse_search($uri, $r[1], $method);

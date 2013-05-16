@@ -3,7 +3,7 @@
  * Part of the Fuel framework.
  *
  * @package    Fuel
- * @version    1.5
+ * @version    1.6
  * @author     Fuel Development Team
  * @license    MIT License
  * @copyright  2010 - 2013 Fuel Development Team
@@ -23,6 +23,16 @@ class Image
 	 * @var  array   Config options to be passed when the instance is created.
 	 */
 	protected static $_config = array();
+
+	/**
+	 * Initialize by loading config
+	 *
+	 * @return void
+	 */
+	public static function _init()
+	{
+		\Config::load('image', true);
+	}
 
 	/**
 	 * Creates a new instance for static use of the class.
@@ -48,7 +58,6 @@ class Image
 	{
 		!is_array($config) and $config = array();
 
-		\Config::load('image', 'image');
 		$config = array_merge(\Config::get('image', array()), $config);
 
 		$protocol = ucfirst( ! empty($config['driver']) ? $config['driver'] : 'gd');
@@ -235,7 +244,7 @@ class Image
 	 * @param   string  $permissions  Allows unix style permissions
 	 * @return  Image_Driver
 	 */
-	public static function save($filename, $permissions = null)
+	public static function save($filename = null, $permissions = null)
 	{
 		return static::instance()->save($filename, $permissions);
 	}

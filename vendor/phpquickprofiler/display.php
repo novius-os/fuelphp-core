@@ -17,7 +17,7 @@
 
 function displayPqp($output) {
 
-	$css = str_replace("\n", "", <<<CSS
+	$css = preg_replace('/[\n\r]/', '', <<<CSS
 .pQp{width:100%;z-index:9999;text-align:center;position:fixed;bottom:0;}
 * html .pQp{position:absolute;}
 .pQp *{margin:0 ;padding:0;border:none;background:#222;}
@@ -115,7 +115,7 @@ function displayPqp($output) {
 #pqp-footer .pqp-actions a{float:right;width:auto}
 #pqp-footer a:hover,#pqp-footer a:hover strong,#pqp-footer a:hover b{background:#fff;color:black!important;text-decoration:none}
 #pqp-footer a:active,#pqp-footer a:active strong,#pqp-footer a:active b{background:#ecf488;color:green!important}
-#openProfiler { position: fixed; bottom: 0; right: 20px; }
+#openProfiler { position: fixed; bottom: 0; right: 20px; z-index:999999; }
 #openProfiler a { height:32px;text-align:center;width:100px;background-color:#222;border:2px solid #000;border-bottom:none;font-size:12px;font-family:"Lucida Grande",Tahoma,Arial,sans-serif;-webkit-border-top-left-radius:4px;-webkit-border-top-right-radius:4px;-moz-border-radius-topleft:4px;-moz-border-radius-topright:4px;;border-top-right-radius:4px;color:#999;line-height: 32px;display:block;}
 #openProfiler a:hover{color:white;text-decoration:none}
 CSS
@@ -490,14 +490,26 @@ else {
 				<td class="'.$class.'">'.$query['sql'];
 			$return_output .='<em>';
 			if(isset($query['explain'])) {
-					isset($query['explain']['possible_keys']) and $return_output .='Possible keys: <b>'.$query['explain']['possible_keys'].'</b> &middot;';
-					isset($query['explain']['key']) and $return_output .='Key Used: <b>'.$query['explain']['key'].'</b> &middot;';
-					isset($query['explain']['type']) and $return_output .='Type: <b>'.$query['explain']['type'].'</b> &middot;';
-					isset($query['explain']['type']) and $return_output .='Rows: <b>'.$query['explain']['rows'].'</b> &middot;';
+					isset($query['explain']['possible_keys']) and $return_output .='Possible keys: <b>'.$query['explain']['possible_keys'].'</b> &middot; ';
+					isset($query['explain']['key']) and $return_output .='Key Used: <b>'.$query['explain']['key'].'</b> &middot; ';
+					isset($query['explain']['type']) and $return_output .='Type: <b>'.$query['explain']['type'].'</b> &middot; ';
+					isset($query['explain']['type']) and $return_output .='Rows: <b>'.$query['explain']['rows'].'</b> &middot; ';
 			}
 			$return_output .='Speed: <b>'.$query['time'].'</b>';
 			$query['duplicate'] and $return_output .=' &middot; <b>DUPLICATE</b>';
-			$return_output .='</em></td></tr>';
+			if ( ! empty($query['stacktrace']))
+			{
+				$return_output .=' &middot;  Call trace for this query:</em>';
+				foreach ($query['stacktrace'] as $st)
+				{
+					$return_output .='<em>File: <b>'.$st['file'].'</b> on line <b>'.$st['line'].'</b></em>';
+				}
+			}
+			else
+			{
+				$return_output .='</em>';
+			}
+			$return_output .='</td></tr>';
 			if($class == '') $class = 'alt';
 			else $class = '';
 		}
@@ -662,5 +674,3 @@ FOOTER;
 
 	return $return_output;
 }
-
-?>

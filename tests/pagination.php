@@ -3,7 +3,7 @@
  * Part of the Fuel framework.
  *
  * @package    Fuel
- * @version    1.5
+ * @version    1.6
  * @author     Fuel Development Team
  * @license    MIT License
  * @copyright  2010 - 2013 Fuel Development Team
@@ -22,6 +22,10 @@ class Test_Pagination extends TestCase
 {
 	protected function set_request($uri)
 	{
+		// fake the uri for this request
+		isset($_SERVER['PATH_INFO']) and $this->pathinfo = $_SERVER['PATH_INFO'];
+		$_SERVER['PATH_INFO'] = '/'.$uri;
+
 		// set Request::$main
 		$this->request = \Request::forge($uri);
 		$rp = new \ReflectionProperty($this->request, 'main');
@@ -36,6 +40,16 @@ class Test_Pagination extends TestCase
 
 	public function tearDown()
 	{
+		// remove the fake uri
+		if (property_exists($this, 'pathinfo'))
+		{
+			$_SERVER['PATH_INFO'] = $this->pathinfo;
+		}
+		else
+		{
+			unset($_SERVER['PATH_INFO']);
+		}
+
 		// reset Request::$main
 		$request = \Request::forge();
 		$rp = new \ReflectionProperty($request, 'main');
@@ -55,10 +69,45 @@ class Test_Pagination extends TestCase
 	protected function set_uri_segment_config()
 	{
 		$this->config = array(
-			'uri_segment'    => 3,
-			'pagination_url' => 'http://docs.fuelphp.com/welcome/index/',
-			'total_items'    => 100,
-			'per_page'       => 10,
+			'uri_segment'             => 3,
+			'pagination_url'          => 'http://docs.fuelphp.com/welcome/index/',
+			'total_items'             => 100,
+			'per_page'                => 10,
+			'wrapper'                 => "<div class=\"pagination\">\n\t{pagination}\n</div>\n",
+
+			'first'                   => "<span class=\"first\">\n\t{link}\n</span>\n",
+			'first-marker'            => "&laquo;&laquo;",
+			'first-link'              => "\t\t<a href=\"{uri}\">{page}</a>\n",
+
+			'first-inactive'          => "",
+			'first-inactive-link'     => "",
+
+			'previous'                => "<span class=\"previous\">\n\t{link}\n</span>\n",
+			'previous-marker'         => "&laquo;",
+			'previous-link'           => "\t\t<a href=\"{uri}\" rel=\"prev\">{page}</a>\n",
+
+			'previous-inactive'       => "<span class=\"previous-inactive\">\n\t{link}\n</span>\n",
+			'previous-inactive-link'  => "\t\t<a href=\"#\" rel=\"prev\">{page}</a>\n",
+
+			'regular'                 => "<span>\n\t{link}\n</span>\n",
+			'regular-link'            => "\t\t<a href=\"{uri}\">{page}</a>\n",
+
+			'active'                  => "<span class=\"active\">\n\t{link}\n</span>\n",
+			'active-link'             => "\t\t<a href=\"#\">{page}</a>\n",
+
+			'next'                    => "<span class=\"next\">\n\t{link}\n</span>\n",
+			'next-marker'            => "&raquo;",
+			'next-link'               => "\t\t<a href=\"{uri}\" rel=\"next\">{page}</a>\n",
+
+			'next-inactive'           => "<span class=\"next-inactive\">\n\t{link}\n</span>\n",
+			'next-inactive-link'      => "\t\t<a href=\"#\" rel=\"next\">{page}</a>\n",
+
+			'last'                    => "<span class=\"last\">\n\t{link}\n</span>\n",
+			'last-marker'             => "&raquo;&raquo;",
+			'last-link'               => "\t\t<a href=\"{uri}\">{page}</a>\n",
+
+			'last-inactive'           => "",
+			'last-inactive-link'      => "",
 		);
 	}
 
@@ -134,6 +183,41 @@ class Test_Pagination extends TestCase
 		$this->assertEquals($expected, $test);
 	}
 
+	public function test_current_page_calculation_from_link()
+	{
+		// set Request::$main & $active
+		$this->set_request('welcome/index/4');
+
+		$this->set_uri_segment_config();
+
+		$config = array(
+			'total_items'    => 12,
+			'per_page'       => 3,
+			'uri_segment'    => 3,
+		);
+
+		$pagination = Pagination::forge(__METHOD__.'-1', $config);
+		$test = $pagination->current_page;
+		$expected = 4;
+		$this->assertEquals($expected, $test);
+	}
+
+	public function test_current_page_calculation_from_config()
+	{
+		$this->set_request('welcome/index/6');
+
+		$config = array(
+			'per_page'       => 3,
+			'total_items'    => 12,
+			'uri_segment'    => 3,
+			'current_page'   => 4,
+		);
+
+		$pagination = Pagination::forge(__METHOD__.'-2', $config);
+		$test = $pagination->current_page;
+		$expected = 4;
+		$this->assertEquals($expected, $test);
+	}
 	/**
 	 * first page
 	 *
@@ -148,7 +232,7 @@ class Test_Pagination extends TestCase
 
 		$output = $pagination->previous();
 		$output = str_replace(array("\n", "\t"), "", $output);
-		$expected = '<span class="previous-inactive"><a href="#">&laquo;</a></span>';
+		$expected = '<span class="previous-inactive"><a href="#" rel="prev">&laquo;</a></span>';
 		$this->assertEquals($expected, $output);
 
 		$output = $pagination->pages_render();
@@ -158,12 +242,12 @@ class Test_Pagination extends TestCase
 
 		$output = $pagination->next();
 		$output = str_replace(array("\n", "\t"), "", $output);
-		$expected = '<span class="next"><a href="http://docs.fuelphp.com/welcome/index/2">&raquo;</a></span>';
+		$expected = '<span class="next"><a href="http://docs.fuelphp.com/welcome/index/2" rel="next">&raquo;</a></span>';
 		$this->assertEquals($expected, $output);
 
 		$output = $pagination->render();
 		$output = str_replace(array("\n", "\t"), "", $output);
-		$expected = '<div class="pagination"><span class="previous-inactive"><a href="#">&laquo;</a></span><span class="active"><a href="#">1</a></span><span><a href="http://docs.fuelphp.com/welcome/index/2">2</a></span><span><a href="http://docs.fuelphp.com/welcome/index/3">3</a></span><span><a href="http://docs.fuelphp.com/welcome/index/4">4</a></span><span><a href="http://docs.fuelphp.com/welcome/index/5">5</a></span><span><a href="http://docs.fuelphp.com/welcome/index/6">6</a></span><span class="next"><a href="http://docs.fuelphp.com/welcome/index/2">&raquo;</a></span></div>';
+		$expected = '<div class="pagination"><span class="previous-inactive"><a href="#" rel="prev">&laquo;</a></span><span class="active"><a href="#">1</a></span><span><a href="http://docs.fuelphp.com/welcome/index/2">2</a></span><span><a href="http://docs.fuelphp.com/welcome/index/3">3</a></span><span><a href="http://docs.fuelphp.com/welcome/index/4">4</a></span><span><a href="http://docs.fuelphp.com/welcome/index/5">5</a></span><span><a href="http://docs.fuelphp.com/welcome/index/6">6</a></span><span class="next"><a href="http://docs.fuelphp.com/welcome/index/2" rel="next">&raquo;</a></span></div>';
 		$this->assertEquals($expected, $output);
 	}
 
@@ -174,15 +258,17 @@ class Test_Pagination extends TestCase
 	public function test_uri_segment_nextlink_inactive()
 	{
 		// set Request::$main & $active
-		$this->set_request('welcome/index/10');
+		$this->set_request('welcome/index/11');
 
 		$this->set_uri_segment_config();
 		$pagination = Pagination::forge(__METHOD__, $this->config);
 
 		$output = $pagination->next();
 		$output = str_replace(array("\n", "\t"), "", $output);
-		$expected = '<span class="next-inactive"><a href="#">&raquo;</a></span>';
+		$expected = '<span class="next-inactive"><a href="#" rel="next">&raquo;</a></span>';
 		$this->assertEquals($expected, $output);
+
+		$this->set_request('welcome/index/10');
 
 		$output = $pagination->pages_render();
 		$output = str_replace(array("\n", "\t"), "", $output);
@@ -191,12 +277,12 @@ class Test_Pagination extends TestCase
 
 		$output = $pagination->previous();
 		$output = str_replace(array("\n", "\t"), "", $output);
-		$expected = '<span class="previous"><a href="http://docs.fuelphp.com/welcome/index/9">&laquo;</a></span>';
+		$expected = '<span class="previous"><a href="http://docs.fuelphp.com/welcome/index/9" rel="prev">&laquo;</a></span>';
 		$this->assertEquals($expected, $output);
 
 		$output = $pagination->render();
 		$output = str_replace(array("\n", "\t"), "", $output);
-		$expected = '<div class="pagination"><span class="previous"><a href="http://docs.fuelphp.com/welcome/index/9">&laquo;</a></span><span><a href="http://docs.fuelphp.com/welcome/index/6">6</a></span><span><a href="http://docs.fuelphp.com/welcome/index/7">7</a></span><span><a href="http://docs.fuelphp.com/welcome/index/8">8</a></span><span><a href="http://docs.fuelphp.com/welcome/index/9">9</a></span><span class="active"><a href="#">10</a></span><span class="next-inactive"><a href="#">&raquo;</a></span></div>';
+		$expected = '<div class="pagination"><span class="previous"><a href="http://docs.fuelphp.com/welcome/index/9" rel="prev">&laquo;</a></span><span><a href="http://docs.fuelphp.com/welcome/index/6">6</a></span><span><a href="http://docs.fuelphp.com/welcome/index/7">7</a></span><span><a href="http://docs.fuelphp.com/welcome/index/8">8</a></span><span><a href="http://docs.fuelphp.com/welcome/index/9">9</a></span><span class="active"><a href="#">10</a></span><span class="next-inactive"><a href="#" rel="next">&raquo;</a></span></div>';
 		$this->assertEquals($expected, $output);
 	}
 
@@ -324,10 +410,45 @@ class Test_Pagination extends TestCase
 	protected function set_query_string_config()
 	{
 		$this->config = array(
-			'uri_segment'    => 'p',
-			'pagination_url' => 'http://docs.fuelphp.com/',
-			'total_items'    => 100,
-			'per_page'       => 10,
+			'uri_segment'             => 'p',
+			'pagination_url'          => 'http://docs.fuelphp.com/',
+			'total_items'             => 100,
+			'per_page'                => 10,
+			'wrapper'                 => "<div class=\"pagination\">\n\t{pagination}\n</div>\n",
+
+			'first'                   => "<span class=\"first\">\n\t{link}\n</span>\n",
+			'first-marker'            => "&laquo;&laquo;",
+			'first-link'              => "\t\t<a href=\"{uri}\">{page}</a>\n",
+
+			'first-inactive'          => "",
+			'first-inactive-link'     => "",
+
+			'previous'                => "<span class=\"previous\">\n\t{link}\n</span>\n",
+			'previous-marker'         => "&laquo;",
+			'previous-link'           => "\t\t<a href=\"{uri}\" rel=\"prev\">{page}</a>\n",
+
+			'previous-inactive'       => "<span class=\"previous-inactive\">\n\t{link}\n</span>\n",
+			'previous-inactive-link'  => "\t\t<a href=\"#\" rel=\"prev\">{page}</a>\n",
+
+			'regular'                 => "<span>\n\t{link}\n</span>\n",
+			'regular-link'            => "\t\t<a href=\"{uri}\">{page}</a>\n",
+
+			'active'                  => "<span class=\"active\">\n\t{link}\n</span>\n",
+			'active-link'             => "\t\t<a href=\"#\">{page}</a>\n",
+
+			'next'                    => "<span class=\"next\">\n\t{link}\n</span>\n",
+			'next-marker'            => "&raquo;",
+			'next-link'               => "\t\t<a href=\"{uri}\" rel=\"next\">{page}</a>\n",
+
+			'next-inactive'           => "<span class=\"next-inactive\">\n\t{link}\n</span>\n",
+			'next-inactive-link'      => "\t\t<a href=\"#\" rel=\"next\">{page}</a>\n",
+
+			'last'                    => "<span class=\"last\">\n\t{link}\n</span>\n",
+			'last-marker'             => "&raquo;&raquo;",
+			'last-link'               => "\t\t<a href=\"{uri}\">{page}</a>\n",
+
+			'last-inactive'           => "",
+			'last-inactive-link'      => "",
 		);
 	}
 
@@ -381,7 +502,7 @@ class Test_Pagination extends TestCase
 
 		$output = $pagination->previous();
 		$output = str_replace(array("\n", "\t"), "", $output);
-		$expected = '<span class="previous-inactive"><a href="#">&laquo;</a></span>';
+		$expected = '<span class="previous-inactive"><a href="#" rel="prev">&laquo;</a></span>';
 		$this->assertEquals($expected, $output);
 
 		$output = $pagination->pages_render();
@@ -391,7 +512,7 @@ class Test_Pagination extends TestCase
 
 		$output = $pagination->next();
 		$output = str_replace(array("\n", "\t"), "", $output);
-		$expected = '<span class="next"><a href="http://docs.fuelphp.com/?p=2">&raquo;</a></span>';
+		$expected = '<span class="next"><a href="http://docs.fuelphp.com/?p=2" rel="next">&raquo;</a></span>';
 		$this->assertEquals($expected, $output);
 	}
 
@@ -410,7 +531,7 @@ class Test_Pagination extends TestCase
 
 		$output = $pagination->next();
 		$output = str_replace(array("\n", "\t"), "", $output);
-		$expected = '<span class="next-inactive"><a href="#">&raquo;</a></span>';
+		$expected = '<span class="next-inactive"><a href="#" rel="next">&raquo;</a></span>';
 		$this->assertEquals($expected, $output);
 
 		$output = $pagination->pages_render();
@@ -420,7 +541,7 @@ class Test_Pagination extends TestCase
 
 		$output = $pagination->previous();
 		$output = str_replace(array("\n", "\t"), "", $output);
-		$expected = '<span class="previous"><a href="http://docs.fuelphp.com/?p=9">&laquo;</a></span>';
+		$expected = '<span class="previous"><a href="http://docs.fuelphp.com/?p=9" rel="prev">&laquo;</a></span>';
 		$this->assertEquals($expected, $output);
 	}
 
