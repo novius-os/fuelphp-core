@@ -3,7 +3,7 @@
  * Part of the Fuel framework.
  *
  * @package    Fuel
- * @version    1.6
+ * @version    1.7
  * @author     Fuel Development Team
  * @license    MIT License
  * @copyright  2010 - 2013 Fuel Development Team
@@ -77,7 +77,7 @@ class Cache_Storage_File extends \Cache_Storage_Driver
 	{
 		foreach($dependencies as $dep)
 		{
-			if (file_exists($file = static::$path.str_replace('.', DS, $dep).'.cache'))
+			if (is_file($file = static::$path.str_replace('.', DS, $dep).'.cache'))
 			{
 				$filemtime = filemtime($file);
 				if ($filemtime === false || $filemtime > $this->created)
@@ -85,9 +85,9 @@ class Cache_Storage_File extends \Cache_Storage_Driver
 					return false;
 				}
 			}
-			elseif (file_exists($dep))
+			elseif (is_file($dep))
 			{
-				$filemtime = filemtime($file);
+				$filemtime = filemtime($dep);
 				if ($filemtime === false || $filemtime > $this->created)
 				{
 					return false;
@@ -107,7 +107,7 @@ class Cache_Storage_File extends \Cache_Storage_Driver
 	 */
 	public function delete()
 	{
-		if (file_exists($file = static::$path.$this->identifier_to_path($this->identifier).'.cache'))
+		if (is_file($file = static::$path.$this->identifier_to_path($this->identifier).'.cache'))
 		{
 			unlink($file);
 			$this->reset();
@@ -122,34 +122,49 @@ class Cache_Storage_File extends \Cache_Storage_Driver
 	 */
 	public function delete_all($section)
 	{
+		// get the cache root path and prep the requested section
 		$path = rtrim(static::$path, '\\/').DS;
-		$section = static::identifier_to_path($section).DS;
+		$section = $section === null ? '' : static::identifier_to_path($section).DS;
 
+		// if the path does not exist, bail out immediately
+		if ( ! is_dir($path.$section))
+		{
+			return true;
+		}
+
+		// get all files in this section
 		$files = \File::read_dir($path.$section, -1, array('\.cache$' => 'file'));
 
-		$delete = function($path, $files) use(&$delete, &$section)
+		// closure to recusively delete the files
+		$delete = function($folder, $files) use(&$delete, $path)
 		{
-			$path = rtrim($path, '\\/').DS;
+			$folder = rtrim($folder, '\\/').DS;
 
 			foreach ($files as $dir => $file)
 			{
 				if (is_numeric($dir))
 				{
-					if ( ! $result = \File::delete($path.$file))
+					if ( ! $result = \File::delete($folder.$file))
 					{
 						return $result;
 					}
 				}
 				else
 				{
-					if ( ! $result = ($delete($path.$dir, $file) and rmdir($path.$dir)))
+					if ( ! $result = ($delete($folder.$dir, $file)))
 					{
 						return $result;
 					}
 				}
 			}
 
-			$section !== '' and rmdir($path);
+			// if we're processing a sub directory
+			if ($folder != $path)
+			{
+				// remove the folder if no more files are left
+				$files = \File::read_dir($folder);
+				empty ($files) and rmdir($folder);
+			}
 
 			return true;
 		};
@@ -304,7 +319,7 @@ class Cache_Storage_File extends \Cache_Storage_Driver
 	{
 		$id_path = $this->identifier_to_path( $this->identifier );
 		$file = static::$path.$id_path.'.cache';
-		if ( ! file_exists($file))
+		if ( ! is_file($file))
 		{
 			return false;
 		}

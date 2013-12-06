@@ -3,7 +3,7 @@
  * Part of the Fuel framework.
  *
  * @package    Fuel
- * @version    1.6
+ * @version    1.7
  * @author     Fuel Development Team
  * @license    MIT License
  * @copyright  2010 - 2013 Fuel Development Team
@@ -433,33 +433,8 @@ JS;
 	 */
 	public static function headers()
 	{
-		// deal with fcgi installs on PHP 5.3
-		if (version_compare(PHP_VERSION, '5.4.0') < 0 and  ! function_exists('apache_request_headers'))
-		{
-			$headers = array();
-			foreach (\Input::server() as $name => $value)
-			{
-				if (strpos($name, 'HTTP_') === 0)
-				{
-					$name = str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', substr($name, 5)))));
-					$headers[$name] = $value;
-				}
-				elseif ($name == 'CONTENT_TYPE')
-				{
-					$headers['Content-Type'] = $value;
-				}
-				elseif ($name == 'CONTENT_LENGTH')
-				{
-					$headers['Content-Length'] = $value;
-				}
-			}
-		}
-		else
-		{
-			$headers = getAllHeaders();
-		}
-
-		return static::dump($headers);
+		// get the current request headers and dump them
+		return static::dump(\Input::headers());
 	}
 
 	/**
@@ -502,7 +477,7 @@ JS;
 		}
 
 		// call the function to be benchmarked
-		$result = is_callable($callable) ? call_user_func_array($callable, $params) : null;
+		$result = is_callable($callable) ? call_fuel_func_array($callable, $params) : null;
 
 		// get the after-benchmark time
 		if (function_exists('getrusage'))

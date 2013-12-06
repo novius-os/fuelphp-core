@@ -3,7 +3,7 @@
  * Part of the Fuel framework.
  *
  * @package    Fuel
- * @version    1.6
+ * @version    1.7
  * @author     Fuel Development Team
  * @license    MIT License
  * @copyright  2010 - 2013 Fuel Development Team
@@ -99,7 +99,7 @@ abstract class Image_Driver
 						$action[$i] = preg_replace('#\$' . $x . '#', $vars[$x], $action[$i]);
 					}
 				}
-				call_user_func_array(array($this, $func), $action);
+				call_fuel_func_array(array($this, $func), $action);
 			}
 			$this->config = $old_config;
 		}
@@ -126,7 +126,7 @@ abstract class Image_Driver
 			'filename'    => $filename,
 			'return_data' => $return_data
 		);
-		if (file_exists($filename))
+		if (is_file($filename))
 		{
 			// Check the extension
 			$ext = $this->check_extension($filename, false, $force_extension);
@@ -444,7 +444,7 @@ abstract class Image_Driver
 	{
 		$filename = realpath($filename);
 		$return = false;
-		if (file_exists($filename) and $this->check_extension($filename, false))
+		if (is_file($filename) and $this->check_extension($filename, false))
 		{
 			$x = 0;
 			$y = 0;
@@ -735,6 +735,7 @@ abstract class Image_Driver
 			$red = 0;
 			$green = 0;
 			$blue = 0;
+			$alpha = 0;
 		}
 		else
 		{
@@ -745,24 +746,29 @@ abstract class Image_Driver
 			}
 
 			// Break apart the hex
-			if (strlen($hex) == 6)
+			if (strlen($hex) == 6 or strlen($hex) == 8)
 			{
 				$red   = hexdec(substr($hex, 0, 2));
 				$green = hexdec(substr($hex, 2, 2));
 				$blue  = hexdec(substr($hex, 4, 2));
+				$alpha = hexdec(substr($hex, 6, 2));
 			}
 			else
 			{
 				$red   = hexdec(substr($hex, 0, 1).substr($hex, 0, 1));
 				$green = hexdec(substr($hex, 1, 1).substr($hex, 1, 1));
 				$blue  = hexdec(substr($hex, 2, 1).substr($hex, 2, 1));
+				$alpha = hexdec(substr($hex, 3, 1).substr($hex, 3, 1));
 			}
 		}
+		
+		$alpha = floor($alpha / 2.55);
 
 		return array(
 			'red' => $red,
 			'green' => $green,
 			'blue' => $blue,
+			'alpha' => $alpha,
 		);
 	}
 
@@ -879,6 +885,16 @@ abstract class Image_Driver
 		$this->debug("Reloading was called!");
 		$this->load($this->image_fullpath);
 		return $this;
+	}
+
+	/**
+	 * Get the file extension (type) worked out on construct
+	 *
+	 * @return  string  File extension
+	 */
+	public function extension()
+	{
+		return $this->image_extension;
 	}
 
 	/**

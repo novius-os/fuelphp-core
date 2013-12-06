@@ -3,7 +3,7 @@
  * Part of the Fuel framework.
  *
  * @package    Fuel
- * @version    1.6
+ * @version    1.7
  * @author     Fuel Development Team
  * @license    MIT License
  * @copyright  2010 - 2013 Fuel Development Team
@@ -102,7 +102,7 @@ class Theme
 		'assets_folder' => 'themes',
 		'view_ext' => '.html',
 		'require_info_file' => false,
-		'info_file_name' => 'theme.info.php',
+		'info_file_name' => 'themeinfo.php',
 		'use_modules' => false,
 	);
 
@@ -212,6 +212,20 @@ class Theme
 	}
 
 	/**
+	 * Loads a viewmodel, and have it use the view from the currently active theme,
+	 * the fallback theme, or the standard FuelPHP cascading file system
+	 *
+	 * @param   string  ViewModel classname without View_ prefix or full classname
+	 * @param   string  Method to execute
+	 * @param   bool    $auto_filter  Auto filter the view data
+	 * @return  View    New View object
+	 */
+	public function viewmodel($view, $method = 'view', $auto_filter = null)
+	{
+		return \ViewModel::forge($view, $method, $auto_filter, $this->find_file($view));
+	}
+
+	/**
 	 * Loads an asset from the currently loaded theme.
 	 *
 	 * @param   string  $path  Relative path to the asset
@@ -288,6 +302,9 @@ class Theme
 			throw new \ThemeException('No valid template could be found. Use set_template() to define a page template.');
 		}
 
+		// storage for rendered results
+		$rendered = array();
+
 		// pre-process all defined partials
 		foreach ($this->partials as $key => $partials)
 		{
@@ -302,17 +319,17 @@ class Theme
 			if ( ! empty($output) and array_key_exists($key, $this->chrome))
 			{
 				// encapsulate the partial in the chrome template
-				$this->partials[$key] = $this->chrome[$key]['view']->set($this->chrome[$key]['var'], $output, false);
+				$rendered[$key] = $this->chrome[$key]['view']->set($this->chrome[$key]['var'], $output, false);
 			}
 			else
 			{
 				// store the partial output
-				$this->partials[$key] = $output;
+				$rendered[$key] = $output;
 			}
 		}
 
 		// assign the partials to the template
-		$this->template->set('partials', $this->partials, false);
+		$this->template->set('partials', $rendered, false);
 
 		// return the template
 		return $this->template;
@@ -373,6 +390,29 @@ class Theme
 		}
 
 		return $this->partials[$section][$view];
+	}
+
+	/**
+	 * Returns wether or not a section has partials defined
+	 *
+	 * @param   string  				$section   Name of the partial section in the template
+	 * @return  bool
+	 */
+	public function has_partials($section)
+	{
+		return $this->partial_count($section) > 0;
+	}
+
+	/**
+	 * Returns the number of partials defined for a section
+	 *
+	 * @param   string  				$section   Name of the partial section in the template
+	 * @return  int
+	 */
+	public function partial_count($section)
+	{
+		// return the defined partial count
+		return array_key_exists($section, $this->partials) ? count($this->partials[$section]) : 0;
 	}
 
 	/**
@@ -469,9 +509,10 @@ class Theme
 		$themes = array();
 		foreach ($this->paths as $path)
 		{
-			foreach(glob($path.'*', GLOB_ONLYDIR) as $theme)
+			$iterator = new \GlobIterator($path.'*');
+			foreach($iterator as $theme)
 			{
-				$themes[] = basename($theme);
+				$themes[] = $theme->getFilename();
 			}
 		}
 		sort($themes);
@@ -657,15 +698,19 @@ class Theme
 			$themes = array($this->active, $this->fallback);
 		}
 
-		// determine the path prefix
+		// determine the path prefix and optionally the module path
 		$path_prefix = '';
-		if ($this->config['use_modules'] and $module = \Request::active()->module)
+		$module_path = null;
+		if ($this->config['use_modules'] and class_exists('Request', false) and $request = \Request::active() and $module = $request->module)
 		{
 			// we're using module name prefixing
 			$path_prefix = $module.DS;
 
 			// and modules are in a separate path
 			is_string($this->config['use_modules']) and $path_prefix = trim($this->config['use_modules'], '\\/').DS.$path_prefix;
+
+			// do we need to check the module too?
+			$this->config['use_modules'] === true and $module_path = \Module::exists($module).'themes'.DS;
 		}
 
 		foreach ($themes as $theme)
@@ -677,7 +722,11 @@ class Theme
 				pathinfo($view, PATHINFO_FILENAME);
 			if (empty($theme['find_file']))
 			{
-				if (is_file($path = $theme['path'].$path_prefix.$file.$ext))
+				if ($module_path and ! empty($theme['name']) and is_file($path = $module_path.$theme['name'].DS.$file.$ext))
+				{
+					return $path;
+				}
+				elseif (is_file($path = $theme['path'].$path_prefix.$file.$ext))
 				{
 					return $path;
 				}
@@ -709,20 +758,21 @@ class Theme
 	 */
 	protected function set_theme($theme = null, $type = 'active')
 	{
-		// remove the defined theme asset paths from the asset instance
-		empty($this->active['asset_path']) or $this->asset->remove_path($this->active['asset_path']);
-		empty($this->fallback['asset_path']) or $this->asset->remove_path($this->fallback['asset_path']);
-
-		// set the fallback theme
+		// set the theme if given
 		if ($theme !== null)
 		{
+			// remove the defined theme asset paths from the asset instance
+			empty($this->active['asset_path']) or $this->asset->remove_path($this->active['asset_path']);
+			empty($this->fallback['asset_path']) or $this->asset->remove_path($this->fallback['asset_path']);
+
 			$this->{$type} = $this->create_theme_array($theme);
+
+			// add the asset paths to the asset instance
+			empty($this->fallback['asset_path']) or $this->asset->add_path($this->fallback['asset_path']);
+			empty($this->active['asset_path']) or $this->asset->add_path($this->active['asset_path']);
 		}
 
-		// add the asset paths to the asset instance
-		empty($this->fallback['asset_path']) or $this->asset->add_path($this->fallback['asset_path']);
-		empty($this->active['asset_path']) or $this->asset->add_path($this->active['asset_path']);
-
+		// and return the theme config
 		return $this->{$type};
 	}
 

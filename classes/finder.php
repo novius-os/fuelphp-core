@@ -3,7 +3,7 @@
  * Part of the Fuel framework.
  *
  * @package    Fuel
- * @version    1.6
+ * @version    1.7
  * @author     Fuel Development Team
  * @license    MIT License
  * @copyright  2010 - 2013 Fuel Development Team
@@ -141,7 +141,7 @@ class Finder
 		{
 			if ($pos === null)
 			{
-				array_push($this->paths, $this->prep_path($path));
+				$this->paths[] = $this->prep_path($path);
 			}
 			elseif ($pos === -1)
 			{
@@ -195,7 +195,7 @@ class Finder
 
 		foreach ($paths as $path)
 		{
-			array_push($this->flash_paths, $this->prep_path($path));
+			$this->flash_paths[] = $this->prep_path($path);
 		}
 
 		return $this;
@@ -277,9 +277,10 @@ class Finder
 		$found = array();
 		foreach ($paths as $path)
 		{
-			if (($f = glob($path.$directory.DS.$filter)) !== false)
+			$files = new \GlobIterator(rtrim($path.$directory,DS).DS.$filter);
+			foreach($files as $file)
 			{
-				$found = array_merge($f, $found);
+				$found[] = $file->getPathname();
 			}
 		}
 
@@ -301,7 +302,7 @@ class Finder
 		$found = $multiple ? array() : false;
 
 		// absolute path requested?
-		if ($file[0] === '/' or (isset($file[1]) and $file[1] === ':'))
+		if ($file[0] === '/' or substr($file,1,2) === ':\\')
 		{
 			if ( ! is_file($file))
 			{
@@ -468,7 +469,14 @@ class Finder
 				if ((time() - filemtime($dir.$file)) < $lifetime)
 				{
 					// Return the cache
-					return unserialize(file_get_contents($dir.$file));
+					try
+					{
+						return unserialize(file_get_contents($dir.$file));
+					}
+					catch (\Exception $e)
+					{
+						// Cache exists but could not be read, ignore it
+					}
 				}
 				else
 				{
@@ -486,7 +494,7 @@ class Finder
 			}
 
 			// Cache not found
-			return NULL;
+			return null;
 		}
 
 		if ( ! is_dir($dir))
@@ -518,7 +526,7 @@ class Finder
 
 			return $result;
 		}
-		catch (Exception $e)
+		catch (\Exception $e)
 		{
 			// Failed to write cache
 			return false;

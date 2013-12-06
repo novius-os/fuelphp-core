@@ -3,7 +3,7 @@
  * Part of the Fuel framework.
  *
  * @package    Fuel
- * @version    1.6
+ * @version    1.7
  * @author     Fuel Development Team
  * @license    MIT License
  * @copyright  2010 - 2013 Fuel Development Team
@@ -96,7 +96,7 @@ class Agent
 	protected static $defaults = array(
 		'browscap' => array(
 			'enabled' => true,
-			'url' => 'http://browsers.garykeith.com/stream.asp?Lite_PHP_BrowsCapINI',
+			'url' => 'http://tempdownloads.browserscap.com/stream.asp?Lite_PHP_BrowsCapINI',
 			'method' => 'wrapper',
 			'file' => '',
 		),
@@ -189,17 +189,21 @@ class Agent
 			}
 		}
 
-		// try the build in get_browser() method
-		if (ini_get('browscap') == '' or false === $browser = get_browser(null, true))
+		// do we have a user agent?
+		if (static::$user_agent)
 		{
-			// if it fails, emulate get_browser()
-			$browser = static::get_from_browscap();
-		}
+			// try the build in get_browser() method
+			if (ini_get('browscap') == '' or false === $browser = get_browser(null, true))
+			{
+				// if it fails, emulate get_browser()
+				$browser = static::get_from_browscap();
+			}
 
-		if ($browser)
-		{
-			// save it for future reference
-			static::$properties = array_change_key_case($browser);
+			if ($browser)
+			{
+				// save it for future reference
+				static::$properties = array_change_key_case($browser);
+			}
 		}
 	}
 
@@ -418,7 +422,7 @@ class Agent
 		switch (static::$config['browscap']['method'])
 		{
 			case 'local':
-				if ( ! file_exists(static::$config['browscap']['file']) or filesize(static::$config['browscap']['file']) == 0)
+				if ( ! is_file(static::$config['browscap']['file']) or filesize(static::$config['browscap']['file']) == 0)
 				{
 					throw new \Exception('Agent class: could not open the local browscap.ini file.');
 				}

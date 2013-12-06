@@ -3,7 +3,7 @@
  * Part of the Fuel framework.
  *
  * @package    Fuel
- * @version    1.6
+ * @version    1.7
  * @author     Fuel Development Team
  * @license    MIT License
  * @copyright  2010 - 2013 Fuel Development Team
@@ -70,6 +70,12 @@ return array(
 
 	// for requests that don't support cookies (i.e. flash), use this POST variable to pass the cookie to the session driver
 	'post_cookie_name'	=> '',
+
+	// for requests in which you don't want to use cookies, use an HTTP header by this name to pass the cookie to the session driver
+	'header_header_name' => 'Session-Id',
+
+	// if false, no cookie will be added to the response send back to the client
+	'enable_cookie'	=> true,
 
 	/**
 	 * specific driver configurations. to override a global setting, just add it to the driver config with a different value

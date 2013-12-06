@@ -112,7 +112,7 @@ abstract class Controller_Rest extends \Controller
 		}
 
 		// Get the configured auth method if none is defined
-		$this->auth === null or $this->auth = \Config::get('rest.auth');
+		$this->auth === null and $this->auth = \Config::get('rest.auth');
 
 		//Check method is authorized if required, and if we're authorized
 		if ($this->auth == 'basic')
@@ -125,7 +125,10 @@ abstract class Controller_Rest extends \Controller
 		}
 		elseif (method_exists($this, $this->auth))
 		{
-			$valid_login = $this->{$this->auth}();
+			if (($valid_login = $this->{$this->auth}()) instanceOf \Response)
+			{
+				return $valid_login;
+			}
 		}
 		else
 		{
@@ -147,7 +150,7 @@ abstract class Controller_Rest extends \Controller
 			// If method is not available, set status code to 404
 			if (method_exists($this, $controller_method))
 			{
-				return call_user_func_array(array($this, $controller_method), $arguments);
+				return call_fuel_func_array(array($this, $controller_method), $arguments);
 			}
 			else
 			{
@@ -208,6 +211,22 @@ abstract class Controller_Rest extends \Controller
 			}
 		}
 
+		// Format not supported, but the output is an array
+		elseif (is_array($data))
+		{
+			if (\Fuel::$env == \Fuel::PRODUCTION)
+			{
+				// not acceptable in production
+				$http_status = 406;
+				$this->response->body('The requested REST method returned array, which is not compatible with the output format "'.$this->format.'"');
+			}
+			else
+			{
+				// convert it to json so we can at least read it while we're developing
+				$this->response->body('The requested REST method returned an array:<br /><br />'.\Format::forge($data)->to_json(null, true));
+			}
+		}
+
 		// Format not supported, output directly
 		else
 		{
@@ -241,7 +260,7 @@ abstract class Controller_Rest extends \Controller
 	protected function _detect_format()
 	{
 		// A format has been passed as an argument in the URL and it is supported
-		if (\Input::param('format') and $this->_supported_formats[\Input::param('format')])
+		if (\Input::param('format') and array_key_exists(\Input::param('format'), $this->_supported_formats))
 		{
 			return \Input::param('format');
 		}
@@ -464,7 +483,7 @@ abstract class Controller_Rest extends \Controller
 	protected function _force_login($nonce = '')
 	{
 		// Get the configured auth method if none is defined
-		$this->auth === null or $this->auth = \Config::get('rest.auth');
+		$this->auth === null and $this->auth = \Config::get('rest.auth');
 
 		if ($this->auth == 'basic')
 		{

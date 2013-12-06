@@ -3,7 +3,7 @@
  * Part of the Fuel framework.
  *
  * @package    Fuel
- * @version    1.6
+ * @version    1.7
  * @author     Fuel Development Team
  * @license    MIT License
  * @copyright  2010 - 2013 Fuel Development Team
@@ -87,10 +87,27 @@ class Upload
 		$config['langCallback'] = '\\Upload::lang_callback';
 
 		// get an upload instance
-		static::$upload = new \FuelPHP\Upload\Upload($config);
+		if (class_exists('Fuel\Upload\Upload'))
+		{
+			static::$upload = new \Fuel\Upload\Upload($config);
+		}
 
-		// and load the uploaded files
-		static::$upload->processFiles();
+		// 1.6.1 fallback
+		elseif (class_exists('FuelPHP\Upload\Upload'))
+		{
+			static::$upload = new \FuelPHP\Upload\Upload($config);
+		}
+
+		else
+		{
+			throw new \FuelException('Can not load \Fuel\Upload\Upload. Did you run composer to install it?');
+		}
+
+		// if auto-process is not enabled, load the uploaded files
+		if ( ! $config['auto_process'])
+		{
+			static::$upload->processFiles();
+		}
 	}
 
 	// ---------------------------------------------------------------------------
@@ -262,7 +279,7 @@ class Upload
 	public static function register($event, $callback)
 	{
 		// make sure we're setting the correct events
-		$event = str_replace(array('before', 'after', 'validate'), array('before_save', 'after_save', 'after_validate'), $event);
+		$event = str_replace(array('before', 'after', 'validate'), array('before_save', 'after_save', 'after_validation'), $event);
 
 		static::$upload->register($event, $callback);
 	}
@@ -316,14 +333,46 @@ class Upload
 	 */
 	public static function save()
 	{
-		$args = func_get_args();
+		// storage for arguments
+		$path = null;
+		$ids = array();
 
+		// do we have any arguments
+		if (func_num_args())
+		{
+			// process them
+			foreach (func_get_args() as $arg)
+			{
+				if (is_string($arg))
+				{
+					$path = $arg;
+				}
+				elseif(is_numeric($arg))
+				{
+					in_array($arg, $ids) or $ids[] = $arg;
+				}
+				elseif(is_array($arg))
+				{
+					$ids = array_merge($ids, $arg);
+				}
+			}
+		}
+
+		// now process the files
+		$counter = 0;
 		foreach (static::$upload->getValidFiles() as $file)
 		{
-			if(isset($args[1])) {
-				$file->setConfig('path', $args[1]);
+			// do we want to process this file?
+			if ( ! empty($ids) and ! in_array($counter++, $ids))
+			{
+				// nope
+				continue;
 			}
 
+			// was a custom path defined?
+			$path and $file->setConfig('path', $path);
+
+			// save the file
 			$file->save();
 		}
 	}

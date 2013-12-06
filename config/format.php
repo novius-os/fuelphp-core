@@ -3,7 +3,7 @@
  * Part of the Fuel framework.
  *
  * @package    Fuel
- * @version    1.6
+ * @version    1.7
  * @author     Fuel Development Team
  * @license    MIT License
  * @copyright  2010 - 2013 Fuel Development Team
@@ -37,5 +37,11 @@ return array(
 	),
 	'xml' => array(
 		'basenode' => 'xml',
+		'use_cdata' => false,
 	),
+	'json' => array(
+		'encode' => array(
+			'options' => JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP,
+		)
+	)
 );

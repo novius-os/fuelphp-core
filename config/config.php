@@ -3,7 +3,7 @@
  * Part of the Fuel framework.
  *
  * @package    Fuel
- * @version    1.6
+ * @version    1.7
  * @author     Fuel Development Team
  * @license    MIT License
  * @copyright  2010 - 2013 Fuel Development Team
@@ -157,7 +157,15 @@ return array(
 		/**
 		 * A salt to make sure the generated security tokens are not predictable
 		 */
-		'token_salt'       => 'put your salt value here to make the token more secure',
+		'token_salt'            => 'put your salt value here to make the token more secure',
+
+		/**
+		 * Allow the Input class to use X headers when present
+		 *
+		 * Examples of these are HTTP_X_FORWARDED_FOR and HTTP_X_FORWARDED_PROTO, which
+		 * can be faked which could have security implications
+		 */
+		'allow_x_headers'       => false,
 
 		/**
 		 * This input filter can be any normal PHP function as well as 'xss_clean'
@@ -209,6 +217,13 @@ return array(
 		 * throw exceptions unless they are instances of the classes in this array.
 		 */
 		'whitelisted_classes' => array(),
+
+		/**
+		 * Set this to true of your client sends data using the HTTP PUT, DELETE or PATCH methods
+		 * using the www-form-urlencoded content-type, and it's contents is urlencoded locally
+		 * before submitting
+		 */
+		'form-double-urlencoded' => false,
 	),
 
 	/**
@@ -255,6 +270,36 @@ return array(
 		 *  Wether to strip the extension
 		 */
 		'strip_extension' => true,
+	),
+
+	/**
+	 * Response settings
+	 */
+	'response' => array(
+		/**
+		 *  Wether to support URI wildcards when redirecting
+		 */
+		'redirect_with_wildcards' => true,
+	),
+
+	/**
+	 * Config settings
+	 */
+	'config' => array(
+		/*
+		 * Name of the table used by the Config_Db driver
+		 */
+		'table_name' => 'config',
+	),
+
+	/**
+	 * Lang settings
+	 */
+	'lang' => array(
+		/*
+		 * Name of the table used by the Lang_Db driver
+		 */
+		'table_name' => 'lang',
 	),
 
 	/**
