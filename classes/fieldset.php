@@ -532,7 +532,7 @@ class Fieldset
 			if (is_array($input) or $input instanceof \ArrayAccess)
 			{
 				// convert form field array's to Fuel dotted notation
-				// remove the last point to prevent accessing a null index
+				// remove trailing dot to prevent accessing a null index
 				$name = trim(str_replace(array('[',']'), array('.', ''), $f->name), '.');
 
 				// fetch the value for this field, and set it if found
