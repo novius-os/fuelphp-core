@@ -93,7 +93,7 @@ class Image_Imagemagick extends \Image_Driver
 		}
 	}
 
-    protected function _flip($direction)
+	protected function _flip($direction)
 	{
 		switch ($direction)
 		{
