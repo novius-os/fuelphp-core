@@ -81,9 +81,19 @@ class Image_Imagemagick extends \Image_Driver
 		$this->exec('convert', $image." -background none -virtual-pixel background +distort ScaleRotateTranslate ".$degrees." +repage ".$image);
 
 		$this->clear_sizes();
+    }
+
+	protected function _quality($quality)
+	{
+		$filetype = $this->image_extension;
+		$image    = '"' . $this->image_temp . '"';
+		$args     = "-quality $quality%";
+		if (($filetype == 'jpeg' or $filetype == 'jpg') and $quality != 100) {
+			$this->exec('convert', $image . ' ' . $args . ' ' . $image);
+		}
 	}
 
-	protected function _flip($direction)
+    protected function _flip($direction)
 	{
 		switch ($direction)
 		{
