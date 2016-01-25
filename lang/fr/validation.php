@@ -9,7 +9,7 @@ return array(
 	'match_pattern'   => 'Le champ :label doit correspondre au motif :param:1.',
 	'match_field'     => 'Le champ :label doit correspondre au champ :param:1.',
 	'valid_email'     => 'Le champ :label doit contenir un email valide.',
-	'valid_emails'    => 'Le champ :label doit contenir une liste d\'emails valides.',
+	'valid_emails'    => 'Le champ :label doit contenir une liste d’emails valides.',
 	'valid_url'       => 'Le champ :label doit contenir une URL valide.',
 	'valid_ip'        => 'Le champ :label doit contenir une adresse IP valide.',
 	'numeric_min'     => 'La valeur du champ :label doit être supérieure ou égale à :param:1',
