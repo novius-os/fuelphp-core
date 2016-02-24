@@ -87,7 +87,7 @@ class Image_Imagemagick extends \Image_Driver
 	{
 		$filetype = $this->image_extension;
 		$image    = '"' . $this->image_temp . '"';
-		$args     = "-quality $quality%";
+		$args     = "-strip -quality $quality%";
 		if (($filetype == 'jpeg' or $filetype == 'jpg') and $quality != 100) {
 			$this->exec('convert', $image . ' ' . $args . ' ' . $image);
 		}
