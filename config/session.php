@@ -44,6 +44,9 @@ return array(
 	// cookie path  (optional, default = '/')
 	'cookie_path'		=> '/',
 
+	// cookie secure flag  (optional, default = use the cookie class default)
+	'cookie_secure'		=> null,
+
 	// cookie http_only flag  (optional, default = use the cookie class default)
 	'cookie_http_only'	=> null,
 
