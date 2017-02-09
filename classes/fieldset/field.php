@@ -583,13 +583,13 @@ class Fieldset_Field
 
 		if (is_array($build_field))
 		{
-            $tagLabel = '{label}';
-            if(is_array($this->label)) {
-                $tagLabel = array('{label}');
-            }
-
-            $labelName = $this->label ? str_replace($tagLabel, $this->label, $form->get_config('group_label', '<span>{label}</span>')) : '';
-            $label = $form->label($labelName, null, array('id' => 'label_'.$this->name));
+			$tagLabel = '{label}';
+			if(is_array($this->label)) {
+				$tagLabel = array('{label}');
+			}
+			
+			$labelName = $this->label ? str_replace($tagLabel, $this->label, $form->get_config('group_label', '<span>{label}</span>')) : '';
+			$label = $form->label($labelName, null, array('id' => 'label_'.$this->name));
 
 			$template = $this->template ?: $form->get_config('multi_field_template', "\t\t<tr>\n\t\t\t<td class=\"{error_class}\">{group_label}{required}</td>\n\t\t\t<td class=\"{error_class}\">{fields}\n\t\t\t\t{field} {label}<br />\n{fields}\t\t\t{error_msg}\n\t\t\t</td>\n\t\t</tr>\n");
 			if ($template && preg_match('#\{fields\}(.*)\{fields\}#Dus', $template, $match) > 0)
@@ -609,13 +609,13 @@ class Fieldset_Field
 				return $template;
 			}
 
-            // map the key value $build_field (to have <input...>label)
-            $labels = array_keys($build_field);
-            $buildFieldMap = array_map(function($value, $key) {
-                return $value.$key;
-            }, $build_field, $labels);
-
-            $build_field = implode(' ', $buildFieldMap);
+			// map the key value $build_field (to have <input...>label)
+			$labels = array_keys($build_field);
+			$buildFieldMap = array_map(function($value, $key) {
+				return $value.$key;
+			}, $build_field, $labels);
+			
+			$build_field = implode(' ', $buildFieldMap);
 		}
 
 		// determine the field_id, which allows us to identify the field for CSS purposes
