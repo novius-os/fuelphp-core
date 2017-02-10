@@ -611,8 +611,8 @@ class Fieldset_Field
 
 			// map the key value $build_field (to have <input...>label)
 			$labels = array_keys($build_field);
-			$buildFieldMap = array_map(function($value, $key) {
-				return $value.$key;
+			$buildFieldMap = array_map(function($input, $label) {
+				return $input.$label;
 			}, $build_field, $labels);
 			
 			$build_field = implode(' ', $buildFieldMap);
