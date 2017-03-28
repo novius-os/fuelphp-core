@@ -549,6 +549,36 @@ abstract class Image_Driver
 	}
 
 	/**
+	 * Adds a blur effect to the image.
+	 *
+	 * @param   float  $radius
+	 * @param   float  $sigma
+	 * @return  Image_Driver
+	 */
+	public function blur($radius, $sigma)
+	{
+		$this->queue('blur', $radius, $sigma);
+		return $this;
+	}
+
+	/**
+	 * Executes the blur event when the queue is ran.
+	 *
+	 * Formats the blur method input for use with driver specific methods
+	 *
+	 * @param   float  $radius
+	 * @param   float  $sigma
+	 * @return  array   An array of variables for the specific driver.
+	 */
+	protected function _blur($radius, $sigma)
+	{
+		return array(
+			'radius' => $radius,
+			'sigma' => $sigma,
+		);
+	}
+
+	/**
 	 * Adds rounded corners to the image.
 	 *
 	 * @param   integer  $radius
