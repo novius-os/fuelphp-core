@@ -113,6 +113,12 @@ class Image_Imagick extends \Image_Driver
 		$this->imagick->compositeImage($wmimage, \Imagick::COMPOSITE_COPYOPACITY, 0, 0);
 	}
 
+	protected function _blur($radius, $sigma)
+	{
+		extract(parent::_blur($radius, $sigma));
+		$this->imagick->blurImage($radius, $sigma);
+	}
+
 	protected function _rounded($radius, $sides, $antialias = 0)
 	{
 		extract(parent::_rounded($radius, $sides, null));

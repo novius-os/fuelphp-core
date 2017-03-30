@@ -215,6 +215,18 @@ class Image
 	}
 
 	/**
+	 * Adds a blur effect to the image
+	 * 
+	 * @param   float  $radius
+	 * @param   float  $sigma
+	 * @return  Image_Driver
+	 */
+	public static function blur($radius, $sigma)
+	{
+		return static::instance()->blur($radius, $sigma);
+	}
+
+	/**
 	 * Adds rounded corners to the image.
 	 *
 	 * @param   integer  $radius

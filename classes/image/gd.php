@@ -259,6 +259,14 @@ class Image_Gd extends \Image_Driver
 		$this->image_data = $image;
 	}
 
+	protected function _blur($radius, $sigma)
+	{
+		extract(parent::_blur($radius, $sigma));
+		for ($i = 0; $i < 10 * ((int) $sigma); $i++) {
+			imagefilter($this->image_data, IMG_FILTER_GAUSSIAN_BLUR);
+		}
+	}
+
 	protected function _rounded($radius, $sides, $antialias)
 	{
 		extract(parent::_rounded($radius, $sides, $antialias));

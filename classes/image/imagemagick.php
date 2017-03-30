@@ -158,6 +158,14 @@ class Image_Imagemagick extends \Image_Driver
 		$this->exec('convert', $command);
 	}
 
+	protected function _blur($radius, $sigma)
+	{
+		extract(parent::_blur($radius, $sigma));
+
+		$image = '"'.$this->image_temp.'"';
+		$this->exec('convert', $image.' -blur '.$radius.'x'.$sigma.' '.$image);
+	}
+
 	/**
 	 * Credit to Leif Åstrand <leif@sitelogic.fi> for the base of the round corners.
 	 *
