@@ -65,7 +65,7 @@ abstract class Controller_Rest extends \Controller
 
 		// Some Methods cant have a body
 		if (!$this->request) {
-            		$this->request = new \stdClass();
+            		$this->request = \Request::forge();
         	}
 		$this->request->body = null;
 
