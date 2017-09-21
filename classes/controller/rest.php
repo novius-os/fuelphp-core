@@ -64,6 +64,9 @@ abstract class Controller_Rest extends \Controller
 		parent::before();
 
 		// Some Methods cant have a body
+		if (!$this->request) {
+            		$this->request = new \stdClass();
+        	}
 		$this->request->body = null;
 
 		// Which format should the data be returned in?
