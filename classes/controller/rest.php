@@ -64,7 +64,7 @@ abstract class Controller_Rest extends \Controller
 		parent::before();
 
 		// Some Methods cant have a body
-		if (!$this->request) {
+		if (empty($this->request)) {
             		$this->request = \Request::forge();
         	}
 		$this->request->body = null;
