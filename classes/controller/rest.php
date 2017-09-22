@@ -59,21 +59,21 @@ abstract class Controller_Rest extends \Controller
 		'csv' => 'application/csv',
 	);
 
-    public function before()
-    {
-        parent::before();
+	public function before()
+	{
+		parent::before();
 
-        // Some Methods cant have a body
-        if (empty($this->request)) {
-            $this->request = \Request::forge();
-        }
-        $this->request->body = null;
+		// Some Methods cant have a body
+		if (empty($this->request)) {
+			$this->request = \Request::forge();
+		}
+		$this->request->body = null;
 
-        // Which format should the data be returned in?
-        $this->request->lang = $this->_detect_lang();
+		// Which format should the data be returned in?
+		$this->request->lang = $this->_detect_lang();
 
-        $this->response = \Response::forge();
-    }
+		$this->response = \Response::forge();
+	}
 
 	public function after($response)
 	{
