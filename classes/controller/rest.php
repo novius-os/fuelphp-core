@@ -64,6 +64,9 @@ abstract class Controller_Rest extends \Controller
 		parent::before();
 
 		// Some Methods cant have a body
+		if (empty($this->request)) {
+			$this->request = \Request::forge();
+		}
 		$this->request->body = null;
 
 		// Which format should the data be returned in?
