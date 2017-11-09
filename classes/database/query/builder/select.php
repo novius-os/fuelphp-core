@@ -133,6 +133,21 @@ class Database_Query_Builder_Select extends \Database_Query_Builder_Where
 	}
 
 	/**
+	 * Choose the tables to select "FROM ...", using an array.
+	 *
+	 * @param   array  $tables  list of table names
+	 * @param   bool   $reset   if true, don't merge but overwrite
+	 *
+	 * @return  $this
+	 */
+	public function from_array(array $tables, $reset = false)
+	{
+		$this->_from = $reset ? $tables : array_merge($this->_from, $tables);
+
+		return $this;
+	}
+
+	/**
 	 * Adds addition tables to "JOIN ...".
 	 *
 	 * @param   mixed   $table  column name or array($column, $alias)
