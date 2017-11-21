@@ -155,7 +155,7 @@ class File
 			throw new \FileAccessException('Directory: "'.$new_dir.'" exists already, cannot be created.');
 		}
 		// unify the path separators, and get the part we need to add to the basepath
-		$segments = explode(DS, str_replace(array('\\', '/'), DS, substr($new_dir, strlen($path))));
+		$segments = array_filter(explode(DS, str_replace(array('\\', '/'), DS, $name)));
 		// recursively create the directory. we can't use mkdir permissions or recursive
 		// due to the fact that mkdir is restricted by the current users umask
 		foreach ($segments as $dir)
